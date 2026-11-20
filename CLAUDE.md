@@ -38,8 +38,8 @@ docs/requirements.md     # สเปก
 
 `.env.local` (ห้าม commit) — ดูตัวอย่างใน `.env.example`
 
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` — server เท่านั้น
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (publishable key `sb_publishable_...`)
+- `SUPABASE_SERVICE_ROLE_KEY` — server เท่านั้น (secret key `sb_secret_...` หรือ legacy service_role)
 - `DEFAULT_PASSWORD=123456`
 
 ## Rules
@@ -81,7 +81,7 @@ docs/requirements.md     # สเปก
 
 ## Progress
 
-- [ ] M1 ตั้งโปรเจกต์
+- [x] M1 ตั้งโปรเจกต์
 - [ ] M2 ฐานข้อมูล + RLS
 - [ ] M3 Login (FR-01–03)
 - [ ] M4 จัดการผู้ใช้ (FR-04–06)
