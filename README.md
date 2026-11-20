@@ -61,10 +61,12 @@ npx supabase link --project-ref <project-ref>
 
 ### ทำงานกับ migration
 
+> ⚠️ CLI รุ่นนี้ใช้ฐานข้อมูล **local เป็นค่าเริ่มต้น** ต้องใส่ `--remote` ทุกครั้งที่จะทำกับโปรเจกต์ cloud (npm script `db:*` ใส่ไว้ให้แล้ว)
+
 ```bash
 npx supabase migration new <name>    # สร้างไฟล์ใน supabase/migrations/
-npx supabase db push                 # ส่ง migration ขึ้นโปรเจกต์ที่ link อยู่ (ใช้กับ dev ก่อนเสมอ)
-npx supabase migration list          # ดูว่า migration ไหน push แล้ว
+npx supabase db push --remote        # ส่ง migration ขึ้นโปรเจกต์ที่ link อยู่ (ใช้กับ dev ก่อนเสมอ)
+npx supabase migration list --remote # ดูว่า migration ไหน push แล้ว
 ```
 
 กติกา:
@@ -74,8 +76,25 @@ npx supabase migration list          # ดูว่า migration ไหน push 
 ### สร้าง TypeScript types จาก schema
 
 ```bash
-npx supabase gen types typescript --linked > src/types/database.ts
+npm run db:types        # = supabase gen types typescript --remote > src/types/database.ts
 ```
+
+### ตั้งค่าฐานข้อมูลครั้งแรก (M2)
+
+```bash
+npm run db:push           # สร้างตาราง + RLS + seed (หมวดหมู่ 4 รายการ, app_settings)
+npm run db:create-admin   # สร้าง admin คนแรก: username "admin" รหัส = DEFAULT_PASSWORD (ต้องเปลี่ยนเมื่อ login)
+npm run db:test-rls       # ทดสอบ RLS ด้วยผู้ใช้ชั่วคราว (สร้างแล้วลบทิ้งเอง) ต้องได้ "0 failed"
+npm run db:types
+```
+
+`db:create-admin` และ `db:test-rls` ใช้ `SUPABASE_SERVICE_ROLE_KEY` จาก `.env.local`
+
+หมายเหตุ schema:
+- `tasks.year` เก็บเป็น **พ.ศ.** (เช่น 2569) ปีงบประมาณเรียกตามปีที่สิ้นสุด (ต.ค. 2569 = ปีงบ 2570)
+- ไม่มีการลบจริง: งานใช้ `is_deleted`, ผู้ใช้ใช้ `is_active`, หมวดหมู่ใช้ `is_active`
+- `task_history` เพิ่มได้อย่างเดียว แก้/ลบไม่ได้
+- ผู้ใช้แก้ `profiles` เองไม่ได้ ทุกการแก้ผ่าน server route ที่ใช้ service role
 
 ---
 

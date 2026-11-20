@@ -54,6 +54,9 @@ docs/requirements.md     # สเปก
 - เปลี่ยน schema ผ่านไฟล์ใน `supabase/migrations` เท่านั้น ห้ามแก้ผ่าน dashboard
 - migration ที่เขียนแล้วและ push แล้ว ห้ามแก้ไฟล์เดิม ให้สร้างไฟล์ใหม่
 - ฟังก์ชันที่ผู้ใช้เรียกใช้ `security invoker` เพื่อให้ RLS ทำงาน
+- ข้อยกเว้น: helper ที่ใช้ใน policy (`is_admin()`, `is_active_user()`) เป็น `security definer` + `set search_path = ''` เพื่อเลี่ยง RLS วนซ้ำบน `profiles`
+- `tasks.year` เก็บเป็น พ.ศ. / ปีงบเรียกตามปีที่สิ้นสุด (ต.ค. 2569 = ปีงบ 2570)
+- ผู้ใช้ไม่มีสิทธิ์ UPDATE `profiles` แก้ผ่าน server route + service role เท่านั้น / ไม่มี hard DELETE (soft delete)
 
 ### Board / การบันทึก
 - การสร้าง/แก้/ลาก/ลบงาน เปลี่ยนแค่ Zustand state จนกว่าผู้ใช้กด "บันทึก" (FR-09)
@@ -82,7 +85,7 @@ docs/requirements.md     # สเปก
 ## Progress
 
 - [x] M1 ตั้งโปรเจกต์
-- [ ] M2 ฐานข้อมูล + RLS
+- [x] M2 ฐานข้อมูล + RLS
 - [ ] M3 Login (FR-01–03)
 - [ ] M4 จัดการผู้ใช้ (FR-04–06)
 - [ ] M5 บอร์ด (FR-07, 08, 12)
