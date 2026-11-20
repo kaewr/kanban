@@ -26,6 +26,10 @@ export function defaultPassword(): string {
   return requireEnv("DEFAULT_PASSWORD");
 }
 
+export function randomTestUsername(): string {
+  return `${E2E_PREFIX}${randomBytes(5).toString("hex")}`;
+}
+
 export type TestUser = {
   id: string;
   username: string;
@@ -42,7 +46,7 @@ export type TestUserOptions = {
 export async function createTestUser(opts: TestUserOptions = {}): Promise<TestUser> {
   const role = opts.role ?? "user";
   const mustChange = opts.mustChangePassword ?? false;
-  const username = `${E2E_PREFIX}${randomBytes(5).toString("hex")}`;
+  const username = randomTestUsername();
   const password = mustChange ? defaultPassword() : `pw-${randomUUID()}`;
   const displayName = `ทดสอบ ${username.slice(E2E_PREFIX.length)}`;
 
@@ -95,4 +99,19 @@ export async function deleteAllTestUsers(): Promise<void> {
       await deleteTestUser(user.id);
     }
   }
+}
+
+export async function deleteTestUserByUsername(username: string): Promise<void> {
+  const { data } = await service().from("profiles").select("id").eq("username", username).maybeSingle();
+  if (data) await deleteTestUser(data.id);
+}
+
+export async function getProfile(username: string) {
+  const { data, error } = await service()
+    .from("profiles")
+    .select("id, username, display_name, role, is_active, must_change_password")
+    .eq("username", username)
+    .maybeSingle();
+  if (error) throw new Error(`getProfile: ${error.message}`);
+  return data;
 }

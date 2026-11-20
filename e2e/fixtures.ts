@@ -1,7 +1,9 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Locator, type Page } from "@playwright/test";
 import {
   createTestUser,
   deleteTestUser,
+  deleteTestUserByUsername,
+  randomTestUsername,
   type TestUser,
   type TestUserOptions,
 } from "./support/users";
@@ -9,6 +11,8 @@ import {
 type Fixtures = {
   /** Creates a throwaway account; deleted automatically after the test. */
   makeUser: (opts?: TestUserOptions) => Promise<TestUser>;
+  /** A fresh e2e_* username for accounts created through the UI; deleted after the test. */
+  newUsername: () => string;
 };
 
 export const test = base.extend<Fixtures>({
@@ -21,6 +25,17 @@ export const test = base.extend<Fixtures>({
     });
     for (const user of created) {
       await deleteTestUser(user.id);
+    }
+  },
+  newUsername: async ({}, use) => {
+    const names: string[] = [];
+    await use(() => {
+      const name = randomTestUsername();
+      names.push(name);
+      return name;
+    });
+    for (const name of names) {
+      await deleteTestUserByUsername(name);
     }
   },
 });
@@ -50,7 +65,7 @@ export async function loginAs(
   expected: RegExp = /\/board$/,
 ): Promise<void> {
   await login(page, user.username, user.password);
-  await expect(page).toHaveURL(expected);
+  await expect(page).toHaveURL(expected, { timeout: 20_000 });
   await waitForHydration(page);
 }
 
@@ -66,8 +81,8 @@ export async function logout(page: Page): Promise<void> {
 }
 
 /** The form's Alert (error or success). Avoids Next.js's route announcer, which also has role="alert". */
-export function formMessage(page: Page) {
-  return page.locator('[data-slot="alert"]');
+export function formMessage(scope: Page | Locator) {
+  return scope.locator('[data-slot="alert"]');
 }
 
 /** FR-02 warning shown while the account still uses the default password. */

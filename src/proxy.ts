@@ -7,8 +7,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except API routes (they check auth themselves and answer 401),
-    // Next.js internals and static files.
-    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Everything except Next.js internals and static files. API routes are included
+    // for the session refresh only (no redirects there).
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

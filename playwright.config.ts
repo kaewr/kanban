@@ -15,9 +15,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  // Every test talks to the same Supabase project; too many parallel workers cause
+  // network failures (fetch failed) on the free tier. Override with E2E_WORKERS.
+  workers: Number(process.env.E2E_WORKERS ?? 2),
   reporter: [["list"], ["html", { open: "never" }]],
-  timeout: 30_000,
+  // Supabase Auth on the free tier slows down under bursts of sign-ins (bcrypt).
+  timeout: 45_000,
   expect: { timeout: 10_000 },
 
   use: {

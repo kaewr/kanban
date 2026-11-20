@@ -57,6 +57,11 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return redirect;
   };
 
+  // API routes only get the session refresh; they check auth themselves and answer 401/403.
+  if (pathname.startsWith("/api/")) {
+    return response;
+  }
+
   if (!userId) {
     if (isLogin) return response;
     return redirectTo(ROUTES.login, pathname === "/" ? undefined : { next: `${pathname}${search}` });

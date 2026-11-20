@@ -42,6 +42,10 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   });
 
   if (error || !data.user) {
+    if (error?.code === "user_banned") {
+      // Deactivated accounts are banned in Supabase Auth (BR-26, M4).
+      return { error: ACCOUNT_INACTIVE, username };
+    }
     if (error?.code === "over_request_rate_limit") {
       return { error: "พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่", username };
     }

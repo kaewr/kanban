@@ -27,7 +27,7 @@ npx supabase db push                # ใช้กับ dev ก่อนเส�
 ```
 src/app/                 # routes: /login, (app)/board, dashboard, admin, profile
 src/proxy.ts             # auth gate (Next 16 "proxy" = middleware) → src/lib/supabase/proxy.ts
-src/app/api/admin/       # API route ที่ใช้ service role key (server only)
+src/app/api/admin/       # API route ที่ใช้ service role key (server only) เริ่มด้วย requireAdminApi() จาก src/lib/admin/api.ts
 src/components/          # UI components
 src/lib/supabase/        # client.ts (browser), server.ts (server), admin.ts (service role, server only)
 src/stores/              # Zustand stores
@@ -48,7 +48,8 @@ docs/requirements.md     # สเปก
 
 ### ความปลอดภัย
 - ห้ามใช้ `SUPABASE_SERVICE_ROLE_KEY` หรือ import `src/lib/supabase/admin.ts` ในโค้ดฝั่ง client
-- ทุก API route ใน `/api/admin` ตรวจ session ฝั่ง server ว่าเป็น admin และ `is_active` ก่อนทำงาน
+- ทุก API route ใน `/api/admin` ตรวจ session ฝั่ง server ว่าเป็น admin และ `is_active` ก่อนทำงาน (`requireAdminApi()`)
+- ปิดบัญชี = `profiles.is_active = false` + ban ใน Supabase Auth / เปิดคืน = ยกเลิก ban (ทำใน `PATCH /api/admin/users/[id]`)
 - เปิด RLS ทุกตาราง สิทธิ์ต้องถูกบังคับที่ database ไม่ใช่แค่ซ่อนปุ่มใน UI
 - ห้าม log รหัสผ่านหรือ token
 
@@ -91,7 +92,7 @@ docs/requirements.md     # สเปก
 - [x] M1 ตั้งโปรเจกต์
 - [x] M2 ฐานข้อมูล + RLS
 - [x] M3 Login (FR-01–03)
-- [ ] M4 จัดการผู้ใช้ (FR-04–06)
+- [x] M4 จัดการผู้ใช้ (FR-04–06)
 - [ ] M5 บอร์ด (FR-07, 08, 12)
 - [ ] M6 การบันทึก (FR-09, 10)
 - [ ] M7 ส่วน Admin (FR-11, 18–20)

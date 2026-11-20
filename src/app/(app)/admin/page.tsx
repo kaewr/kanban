@@ -1,9 +1,37 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import Link from "next/link";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth";
+import { ROUTES } from "@/lib/routes";
 
 export const metadata = { title: "Admin | Kanban Board บันทึกงาน" };
 
+const SECTIONS = [
+  {
+    href: ROUTES.adminUsers,
+    title: "จัดการผู้ใช้",
+    description: "เพิ่มผู้ใช้ กำหนดบทบาท รีเซ็ตรหัสผ่าน ปิด/เปิดการใช้งาน",
+  },
+  // M7: boards of other users (FR-11), categories (FR-18), year settings (FR-19)
+] as const;
+
 export default async function AdminPage() {
   await requireAdmin();
-  return <PlaceholderPage title="Admin" note="กำลังพัฒนา (M4, M7)" />;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <h1 className="text-2xl font-semibold">Admin</h1>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {SECTIONS.map((section) => (
+          <Link key={section.href} href={section.href} className="rounded-xl focus-visible:outline-2">
+            <Card className="h-full transition-colors hover:bg-muted/50">
+              <CardHeader>
+                <CardTitle>{section.title}</CardTitle>
+                <CardDescription>{section.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
