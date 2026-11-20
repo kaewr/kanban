@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-/** Centered card used by /login and /change-password. */
+/** Centered card used by /login. */
 export function AuthCard({
   title,
   description,

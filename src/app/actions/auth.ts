@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
 import { getSupabasePublicEnv } from "@/lib/env";
@@ -50,7 +51,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   // RLS hides the profile of an inactive account (BR-26).
   const { data: profile } = await supabase
     .from("profiles")
-    .select("must_change_password")
+    .select("id")
     .eq("id", data.user.id)
     .maybeSingle();
 
@@ -59,7 +60,8 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     return { error: ACCOUNT_INACTIVE, username };
   }
 
-  redirect(profile.must_change_password ? ROUTES.changePassword : next);
+  // Default-password accounts are not blocked; the app shows a warning banner (FR-02).
+  redirect(next);
 }
 
 // ---------------------------------------------------------------------------
@@ -72,25 +74,9 @@ export async function logout(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// FR-02 / FR-03 Change password
+// FR-03 Change own password (profile page). Clears the FR-02 warning flag.
 // ---------------------------------------------------------------------------
-
-/** Forced change after login with the default password (FR-02). */
-export async function changeRequiredPassword(_prev: FormState, formData: FormData): Promise<FormState> {
-  const result = await applyPasswordChange(formData, { requireCurrent: false });
-  if (result.error) return result;
-  redirect(ROUTES.home);
-}
-
-/** Self-service change from the profile page (FR-03); current password required. */
 export async function changeOwnPassword(_prev: FormState, formData: FormData): Promise<FormState> {
-  return applyPasswordChange(formData, { requireCurrent: true });
-}
-
-async function applyPasswordChange(
-  formData: FormData,
-  { requireCurrent }: { requireCurrent: boolean },
-): Promise<FormState> {
   const profile = await getCurrentProfile();
   if (!profile) redirect(ROUTES.login);
 
@@ -100,14 +86,12 @@ async function applyPasswordChange(
   const invalid = validateNewPassword(newPassword, confirmPassword);
   if (invalid) return { error: invalid };
 
-  if (requireCurrent) {
-    const currentPassword = field(formData, "currentPassword");
-    if (!(await isCurrentPassword(profile.username, currentPassword))) {
-      return { error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" };
-    }
-    if (currentPassword === newPassword) {
-      return { error: passwordUpdateErrorMessage("same_password") };
-    }
+  const currentPassword = field(formData, "currentPassword");
+  if (!(await isCurrentPassword(profile.username, currentPassword))) {
+    return { error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" };
+  }
+  if (currentPassword === newPassword) {
+    return { error: passwordUpdateErrorMessage("same_password") };
   }
 
   const supabase = await createClient();
@@ -125,6 +109,7 @@ async function applyPasswordChange(
     }
   }
 
+  refresh(); // re-render the layout so the default-password banner disappears
   return { success: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว" };
 }
 

@@ -73,7 +73,7 @@ async function main(): Promise<void> {
   });
   if (insertError) throw insertError;
 
-  console.log(`Created admin profile "${USERNAME}". Log in with DEFAULT_PASSWORD; a password change will be required.`);
+  console.log(`Created admin profile "${USERNAME}". Log in with DEFAULT_PASSWORD; a warning will ask to change it.`);
 }
 
 main().catch((error: unknown) => {

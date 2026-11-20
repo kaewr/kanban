@@ -12,7 +12,11 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
-    return [{ source: "/", destination: "/board", permanent: false }];
+    return [
+      { source: "/", destination: "/board", permanent: false },
+      // FR-02 no longer forces a password change (2026-11-20); old links land on the profile page.
+      { source: "/change-password", destination: "/profile", permanent: false },
+    ];
   },
 };
 

@@ -69,3 +69,8 @@ export async function logout(page: Page): Promise<void> {
 export function formMessage(page: Page) {
   return page.locator('[data-slot="alert"]');
 }
+
+/** FR-02 warning shown while the account still uses the default password. */
+export function defaultPasswordBanner(page: Page) {
+  return page.getByTestId("default-password-banner");
+}

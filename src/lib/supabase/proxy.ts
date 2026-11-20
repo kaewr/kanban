@@ -8,7 +8,8 @@ import type { Database } from "@/types/database";
  * Refreshes the Supabase session and enforces the auth gates:
  * - not signed in            -> /login?next=...
  * - no profile / inactive    -> sign out, /login?reason=inactive  (BR-26, FR-06)
- * - must_change_password     -> /change-password                  (FR-02)
+ * - signed in on /login      -> /board
+ * must_change_password only shows a warning banner (FR-02, changed 2026-11-20).
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   const { url, publishableKey } = getSupabasePublicEnv();
@@ -40,7 +41,6 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   const { pathname, search } = request.nextUrl;
   const isLogin = pathname === ROUTES.login;
-  const isChangePassword = pathname === ROUTES.changePassword;
 
   // Redirect while keeping any refreshed/cleared auth cookies.
   const redirectTo = (path: string, params?: Record<string, string>): NextResponse => {
@@ -65,7 +65,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // RLS returns no row when the account is inactive.
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("must_change_password")
+    .select("id")
     .eq("id", userId)
     .maybeSingle();
 
@@ -79,11 +79,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return redirectTo(ROUTES.login, { reason: LOGIN_REASON_INACTIVE });
   }
 
-  if (profile.must_change_password) {
-    return isChangePassword ? response : redirectTo(ROUTES.changePassword);
-  }
-
-  if (isLogin || isChangePassword) {
+  if (isLogin) {
     return redirectTo(ROUTES.home);
   }
 

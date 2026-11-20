@@ -1,10 +1,10 @@
 export const ROUTES = {
   login: "/login",
-  changePassword: "/change-password",
   home: "/board",
   board: "/board",
   dashboard: "/dashboard",
   admin: "/admin",
+  adminUsers: "/admin/users",
   profile: "/profile",
 } as const;
 
@@ -15,7 +15,7 @@ export function safeNextPath(raw: unknown): string {
   if (typeof raw !== "string" || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
     return ROUTES.home;
   }
-  if (raw === ROUTES.login || raw.startsWith(`${ROUTES.login}?`) || raw === ROUTES.changePassword) {
+  if (raw === ROUTES.login || raw.startsWith(`${ROUTES.login}?`)) {
     return ROUTES.home;
   }
   return raw;

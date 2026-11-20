@@ -25,7 +25,7 @@ npx supabase db push                # ใช้กับ dev ก่อนเส�
 ## Structure (เป้าหมาย)
 
 ```
-src/app/                 # routes: /login, /change-password, (app)/board, dashboard, admin, profile
+src/app/                 # routes: /login, (app)/board, dashboard, admin, profile
 src/proxy.ts             # auth gate (Next 16 "proxy" = middleware) → src/lib/supabase/proxy.ts
 src/app/api/admin/       # API route ที่ใช้ service role key (server only)
 src/components/          # UI components
@@ -68,7 +68,8 @@ docs/requirements.md     # สเปก
 
 ### Auth
 - username → `<username>@kanban.local` ก่อนเรียก Supabase Auth (BR-21) ไม่แสดงอีเมลนี้ใน UI
-- `must_change_password = true` → พาไป `/change-password` ทุกหน้า (ทำใน `src/proxy.ts`)
+- `must_change_password = true` → **ไม่บล็อก** แสดงแถบเตือน `DefaultPasswordBanner` ทุกหน้าจนกว่าจะเปลี่ยนรหัสที่ `/profile` (FR-02 แก้ไข 20 พ.ย. 2026)
+- proxy (`src/proxy.ts`) ตรวจแค่ login แล้วหรือยัง และบัญชีถูกปิดหรือไม่
 - หน้าและ Server Action ต้องเรียก `requireProfile()` / `requireAdmin()` จาก `src/lib/auth.ts` เสมอ ไม่พึ่ง proxy อย่างเดียว
 
 ### Code style

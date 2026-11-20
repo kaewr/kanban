@@ -39,11 +39,10 @@ export const getCurrentProfile = cache(async (): Promise<CurrentProfile | null> 
   };
 });
 
-/** For app pages and actions: signed in, active, password already changed. */
+/** For app pages and actions: signed in and active. */
 export async function requireProfile(): Promise<CurrentProfile> {
   const profile = await getCurrentProfile();
   if (!profile) redirect(ROUTES.login);
-  if (profile.mustChangePassword) redirect(ROUTES.changePassword);
   return profile;
 }
 

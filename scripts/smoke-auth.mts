@@ -127,22 +127,21 @@ async function main(): Promise<void> {
     check("/board -> /login?next=%2Fboard", redirectsTo(board, "/login?next=%2Fboard"), board.location);
     const profile = await get("/profile");
     check("/profile -> /login", redirectsTo(profile, "/login"), profile.location);
-    const change = await get("/change-password");
-    check("/change-password -> /login", redirectsTo(change, "/login"), change.location);
   }
 
   const fresh = await createUser("fresh", { role: "user", mustChange: true });
   const user = await createUser("user", { role: "user", mustChange: false });
   const admin = await createUser("admin", { role: "admin", mustChange: false });
 
-  console.log("\nmust_change_password = true (FR-02)");
-  for (const path of ["/board", "/dashboard", "/profile", "/admin", "/login"]) {
+  console.log("\nmust_change_password = true (FR-02: warning only)");
+  for (const path of ["/board", "/dashboard", "/profile"]) {
     const res = await get(path, fresh.cookie);
-    check(`${path} -> /change-password`, redirectsTo(res, "/change-password"), `${res.status} ${res.location}`);
+    check(`${path} 200 (not blocked)`, res.status === 200, `${res.status} ${res.location}`);
+    check(`${path} shows the default-password banner`, res.body.includes("default-password-banner"));
   }
   {
     const res = await get("/change-password", fresh.cookie);
-    check("/change-password is reachable (200)", res.status === 200, `status ${res.status}`);
+    check("/change-password -> /profile", redirectsTo(res, "/profile"), `${res.status} ${res.location}`);
   }
 
   console.log("\nActive user");
@@ -154,8 +153,7 @@ async function main(): Promise<void> {
     check("internal email not shown", !board.body.includes("@kanban.local"));
     const login = await get("/login", user.cookie);
     check("/login -> /board when signed in", redirectsTo(login, "/board"), login.location);
-    const change = await get("/change-password", user.cookie);
-    check("/change-password -> /board when not required", redirectsTo(change, "/board"), change.location);
+    check("no default-password banner", !board.body.includes("default-password-banner"));
     const adminPage = await get("/admin", user.cookie);
     const blocked = redirectsTo(adminPage, "/board") || (adminPage.status === 200 && adminPage.body.includes("NEXT_REDIRECT"));
     check("/admin blocked for user", blocked, `status ${adminPage.status}`);

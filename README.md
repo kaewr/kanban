@@ -83,7 +83,7 @@ npm run db:types        # = supabase gen types typescript --remote > src/types/d
 
 ```bash
 npm run db:push           # สร้างตาราง + RLS + seed (หมวดหมู่ 4 รายการ, app_settings)
-npm run db:create-admin   # สร้าง admin คนแรก: username "admin" รหัส = DEFAULT_PASSWORD (ต้องเปลี่ยนเมื่อ login)
+npm run db:create-admin   # สร้าง admin คนแรก: username "admin" รหัส = DEFAULT_PASSWORD (จะเห็นแถบเตือนให้เปลี่ยนรหัส)
 npm run db:test-rls       # ทดสอบ RLS ด้วยผู้ใช้ชั่วคราว (สร้างแล้วลบทิ้งเอง) ต้องได้ "0 failed"
 npm run db:types
 ```

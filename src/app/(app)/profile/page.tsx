@@ -35,7 +35,7 @@ export default async function ProfilePage() {
           <CardTitle>เปลี่ยนรหัสผ่าน</CardTitle>
         </CardHeader>
         <CardContent>
-          <PasswordForm mode="self" />
+          <PasswordForm />
         </CardContent>
       </Card>
 

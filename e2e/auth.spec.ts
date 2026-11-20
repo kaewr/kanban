@@ -1,10 +1,9 @@
-// M3: FR-01, FR-02, FR-03, BR-21..24, BR-26
-import { expect, formMessage, gotoReady, login, loginAs, logout, test } from "./fixtures";
+// M3: FR-01, FR-02 (warning only since 2026-11-20), FR-03, BR-21..24, BR-26
+import { defaultPasswordBanner, expect, formMessage, gotoReady, login, loginAs, logout, test } from "./fixtures";
 import { defaultPassword, setActive } from "./support/users";
 
 const INVALID_CREDENTIALS = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
 const INACTIVE = /ถูกปิดการใช้งาน/;
-const CHANGE_PASSWORD_URL = /\/change-password$/;
 const BOARD_URL = /\/board$/;
 
 test.describe("FR-01 login", () => {
@@ -54,54 +53,72 @@ test.describe("FR-01 login", () => {
   });
 });
 
-test.describe("FR-02 forced password change", () => {
-  test("new account must set a new password before using the app", async ({ page, makeUser }) => {
+test.describe("FR-02 default-password warning", () => {
+  test("default-password account can use the app but sees a warning until it changes the password", async ({ page, makeUser }) => {
+    test.slow(); // many sequential round trips
     const user = await makeUser({ mustChangePassword: true });
-    await loginAs(page, { username: user.username, password: defaultPassword() }, CHANGE_PASSWORD_URL);
+    await loginAs(page, { username: user.username, password: defaultPassword() });
 
-    // Every page leads back here until the password is changed.
-    for (const path of ["/board", "/dashboard", "/profile", "/admin"]) {
-      await page.goto(path);
-      await expect(page).toHaveURL(CHANGE_PASSWORD_URL);
+    // Not blocked: every page opens, and each shows the warning banner.
+    for (const path of ["/board", "/dashboard", "/profile"]) {
+      await gotoReady(page, path);
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
+      await expect(defaultPasswordBanner(page)).toBeVisible();
     }
-    await gotoReady(page, "/change-password");
 
+    // Banner links to the profile page.
+    await gotoReady(page, "/board");
+    await defaultPasswordBanner(page).getByRole("link", { name: "เปลี่ยนรหัสผ่าน" }).click();
+    await expect(page).toHaveURL(/\/profile$/);
+    await gotoReady(page, "/profile");
+
+    const current = page.getByLabel("รหัสผ่านปัจจุบัน");
     const newPassword = page.getByLabel("รหัสผ่านใหม่", { exact: true });
     const confirm = page.getByLabel("ยืนยันรหัสผ่านใหม่");
     const submit = page.getByRole("button", { name: "เปลี่ยนรหัสผ่าน" });
 
-    // BR-24: default password is rejected.
+    // BR-24: the default password cannot be chosen again.
+    await current.fill(defaultPassword());
     await newPassword.fill(defaultPassword());
     await confirm.fill(defaultPassword());
     await submit.click();
     await expect(formMessage(page)).toContainText("ห้ามใช้รหัสผ่านเริ่มต้น");
+    await expect(defaultPasswordBanner(page)).toBeVisible();
 
-    // Confirmation must match.
-    await newPassword.fill("new-pass-1");
-    await confirm.fill("new-pass-2");
-    await submit.click();
-    await expect(formMessage(page)).toContainText("ไม่ตรงกัน");
-
+    await current.fill(defaultPassword());
     await newPassword.fill("new-pass-1");
     await confirm.fill("new-pass-1");
     await submit.click();
-    await expect(page).toHaveURL(BOARD_URL);
+    await expect(formMessage(page)).toContainText("เปลี่ยนรหัสผ่านเรียบร้อยแล้ว");
 
-    // New password works on the next login; the flag stays cleared.
+    // Banner disappears right away and stays gone.
+    await expect(defaultPasswordBanner(page)).toHaveCount(0);
+    await gotoReady(page, "/board");
+    await expect(defaultPasswordBanner(page)).toHaveCount(0);
+
     await gotoReady(page, "/profile");
     await logout(page);
     await loginAs(page, { username: user.username, password: "new-pass-1" });
+    await expect(defaultPasswordBanner(page)).toHaveCount(0);
   });
 
-  test("change-password page can log out", async ({ page, makeUser }) => {
+  test("account with a changed password sees no warning", async ({ page, makeUser }) => {
+    const user = await makeUser();
+    await loginAs(page, user);
+    await expect(defaultPasswordBanner(page)).toHaveCount(0);
+  });
+
+  test("old /change-password link goes to the profile page", async ({ page, makeUser }) => {
     const user = await makeUser({ mustChangePassword: true });
-    await loginAs(page, { username: user.username, password: defaultPassword() }, CHANGE_PASSWORD_URL);
-    await logout(page);
+    await loginAs(page, { username: user.username, password: defaultPassword() });
+    await page.goto("/change-password");
+    await expect(page).toHaveURL(/\/profile$/);
   });
 });
 
 test.describe("FR-03 change own password", () => {
   test("requires the current password and accepts a valid change", async ({ page, makeUser }) => {
+    test.slow(); // many sequential round trips
     const user = await makeUser();
     await loginAs(page, user);
     await gotoReady(page, "/profile");
