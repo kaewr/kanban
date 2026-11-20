@@ -10,7 +10,8 @@
     "db:push": "supabase db push --remote",
     "db:types": "supabase gen types typescript --remote --schema public > src/types/database.ts",
     "db:create-admin": "node --env-file=.env.local scripts/create-admin.mts",
-    "db:test-rls": "node --env-file=.env.local scripts/test-rls.mts"
+    "db:test-rls": "node --env-file=.env.local scripts/test-rls.mts",
+    "test:smoke-auth": "node --env-file=.env.local scripts/smoke-auth.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

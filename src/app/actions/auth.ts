@@ -1,0 +1,145 @@
+"use server";
+
+import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
+import { getCurrentProfile } from "@/lib/auth";
+import { getSupabasePublicEnv } from "@/lib/env";
+import { passwordUpdateErrorMessage, validateNewPassword } from "@/lib/password";
+import { ROUTES, safeNextPath } from "@/lib/routes";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { isValidUsername, normalizeUsername, toAuthEmail } from "@/lib/username";
+
+export type FormState = { error?: string; success?: string };
+
+const INVALID_CREDENTIALS = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"; // FR-01
+const ACCOUNT_INACTIVE = "บัญชีนี้ถูกปิดการใช้งาน กรุณาติดต่อผู้ดูแลระบบ";
+
+function field(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
+
+// ---------------------------------------------------------------------------
+// FR-01 Login
+// ---------------------------------------------------------------------------
+export type LoginState = FormState & { username?: string };
+
+export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const username = normalizeUsername(formData.get("username"));
+  const password = field(formData, "password");
+  const next = safeNextPath(formData.get("next"));
+
+  if (!isValidUsername(username) || password.length === 0) {
+    return { error: INVALID_CREDENTIALS, username };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: toAuthEmail(username), // BR-21
+    password,
+  });
+
+  if (error || !data.user) {
+    if (error?.code === "over_request_rate_limit") {
+      return { error: "พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่", username };
+    }
+    return { error: INVALID_CREDENTIALS, username };
+  }
+
+  // RLS hides the profile of an inactive account (BR-26).
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("must_change_password")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    await supabase.auth.signOut({ scope: "local" });
+    return { error: ACCOUNT_INACTIVE, username };
+  }
+
+  redirect(profile.must_change_password ? ROUTES.changePassword : next);
+}
+
+// ---------------------------------------------------------------------------
+// Logout (this device only)
+// ---------------------------------------------------------------------------
+export async function logout(): Promise<void> {
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "local" });
+  redirect(ROUTES.login);
+}
+
+// ---------------------------------------------------------------------------
+// FR-02 / FR-03 Change password
+// ---------------------------------------------------------------------------
+
+/** Forced change after login with the default password (FR-02). */
+export async function changeRequiredPassword(_prev: FormState, formData: FormData): Promise<FormState> {
+  const result = await applyPasswordChange(formData, { requireCurrent: false });
+  if (result.error) return result;
+  redirect(ROUTES.home);
+}
+
+/** Self-service change from the profile page (FR-03); current password required. */
+export async function changeOwnPassword(_prev: FormState, formData: FormData): Promise<FormState> {
+  return applyPasswordChange(formData, { requireCurrent: true });
+}
+
+async function applyPasswordChange(
+  formData: FormData,
+  { requireCurrent }: { requireCurrent: boolean },
+): Promise<FormState> {
+  const profile = await getCurrentProfile();
+  if (!profile) redirect(ROUTES.login);
+
+  const newPassword = field(formData, "newPassword");
+  const confirmPassword = field(formData, "confirmPassword");
+
+  const invalid = validateNewPassword(newPassword, confirmPassword);
+  if (invalid) return { error: invalid };
+
+  if (requireCurrent) {
+    const currentPassword = field(formData, "currentPassword");
+    if (!(await isCurrentPassword(profile.username, currentPassword))) {
+      return { error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" };
+    }
+    if (currentPassword === newPassword) {
+      return { error: passwordUpdateErrorMessage("same_password") };
+    }
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) return { error: passwordUpdateErrorMessage(error.code) };
+
+  if (profile.mustChangePassword) {
+    // Users cannot update profiles under RLS; clear the flag with the service role.
+    const { error: flagError } = await createAdminClient()
+      .from("profiles")
+      .update({ must_change_password: false })
+      .eq("id", profile.id);
+    if (flagError) {
+      return { error: "เปลี่ยนรหัสผ่านแล้ว แต่บันทึกสถานะไม่สำเร็จ กรุณาลองเปลี่ยนรหัสผ่านอีกครั้ง" };
+    }
+  }
+
+  return { success: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว" };
+}
+
+/** Verifies a password with a throwaway client so the current session is untouched. */
+async function isCurrentPassword(username: string, password: string): Promise<boolean> {
+  if (password.length === 0) return false;
+  const { url, publishableKey } = getSupabasePublicEnv();
+  const verifier = createSupabaseJsClient(url, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const { error } = await verifier.auth.signInWithPassword({
+    email: toAuthEmail(username),
+    password,
+  });
+  if (error) return false;
+  await verifier.auth.signOut({ scope: "local" }); // revoke only the verification session
+  return true;
+}

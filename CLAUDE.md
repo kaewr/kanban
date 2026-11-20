@@ -24,7 +24,8 @@ npx supabase db push                # ใช้กับ dev ก่อนเส�
 ## Structure (เป้าหมาย)
 
 ```
-src/app/                 # routes: /login, /change-password, /board, /dashboard, /admin/*
+src/app/                 # routes: /login, /change-password, (app)/board, dashboard, admin, profile
+src/proxy.ts             # auth gate (Next 16 "proxy" = middleware) → src/lib/supabase/proxy.ts
 src/app/api/admin/       # API route ที่ใช้ service role key (server only)
 src/components/          # UI components
 src/lib/supabase/        # client.ts (browser), server.ts (server), admin.ts (service role, server only)
@@ -66,7 +67,8 @@ docs/requirements.md     # สเปก
 
 ### Auth
 - username → `<username>@kanban.local` ก่อนเรียก Supabase Auth (BR-21) ไม่แสดงอีเมลนี้ใน UI
-- `must_change_password = true` → พาไป `/change-password` ทุกหน้า
+- `must_change_password = true` → พาไป `/change-password` ทุกหน้า (ทำใน `src/proxy.ts`)
+- หน้าและ Server Action ต้องเรียก `requireProfile()` / `requireAdmin()` จาก `src/lib/auth.ts` เสมอ ไม่พึ่ง proxy อย่างเดียว
 
 ### Code style
 - TypeScript strict ห้าม `any` ถ้าเลี่ยงได้ สร้าง type ของ DB ด้วย `npx supabase gen types`
@@ -86,7 +88,7 @@ docs/requirements.md     # สเปก
 
 - [x] M1 ตั้งโปรเจกต์
 - [x] M2 ฐานข้อมูล + RLS
-- [ ] M3 Login (FR-01–03)
+- [x] M3 Login (FR-01–03)
 - [ ] M4 จัดการผู้ใช้ (FR-04–06)
 - [ ] M5 บอร์ด (FR-07, 08, 12)
 - [ ] M6 การบันทึก (FR-09, 10)

@@ -96,6 +96,19 @@ npm run db:types
 - `task_history` เพิ่มได้อย่างเดียว แก้/ลบไม่ได้
 - ผู้ใช้แก้ `profiles` เองไม่ได้ ทุกการแก้ผ่าน server route ที่ใช้ service role
 
+### ตั้งค่า Supabase Auth (M3)
+
+Dashboard → **Authentication → Sign In / Providers**:
+- ปิด **Allow new users to sign up** (BR-20: บัญชีสร้างโดย admin เท่านั้น — admin API ยังสร้างได้ตามปกติ)
+- **Email** provider ต้องเปิดอยู่ (ระบบแปลง username เป็น `<username>@kanban.local` ภายใน)
+
+### ทดสอบระบบ login
+
+```bash
+npm run build && npm run start      # เทอร์มินัลที่ 1
+npm run test:smoke-auth             # เทอร์มินัลที่ 2: ทดสอบ redirect ของ proxy ด้วยผู้ใช้ชั่วคราว smoke_*
+```
+
 ---
 
 ## 3. Deploy บน Vercel
@@ -113,7 +126,7 @@ npm run db:types
 
    ถ้าต้องการให้ Preview ใช้ฐานข้อมูล dev แยกจาก Production ให้ตั้งค่าแยกตาม environment
 
-4. กด **Deploy** แล้วเปิด URL ที่ได้ หน้าแรกควรแสดง "✅ เชื่อมต่อ Supabase สำเร็จ"
+4. กด **Deploy** แล้วเปิด URL ที่ได้ ควรถูกพาไปหน้า `/login`
 
 หมายเหตุ:
 - แก้ env ภายหลัง → ต้อง **Redeploy** ถึงจะมีผล (ค่า `NEXT_PUBLIC_*` ถูกฝังตอน build)
