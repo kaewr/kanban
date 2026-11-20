@@ -7,12 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm({ next }: { next: string }) {
-  const [state, formAction, pending] = useActionState<LoginState, FormData>(login, {});
+// `next` is read from the URL at submit time (validated again on the server),
+// so the form does not depend on request-time data.
+function submitLogin(prev: LoginState, formData: FormData): Promise<LoginState> {
+  formData.set("next", new URLSearchParams(window.location.search).get("next") ?? "");
+  return login(prev, formData);
+}
+
+export function LoginForm() {
+  const [state, formAction, pending] = useActionState<LoginState, FormData>(submitLogin, {});
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <input type="hidden" name="next" value={next} />
       <FormMessage error={state.error} />
 
       <div className="flex flex-col gap-2">

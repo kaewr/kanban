@@ -102,11 +102,32 @@ Dashboard → **Authentication → Sign In / Providers**:
 - ปิด **Allow new users to sign up** (BR-20: บัญชีสร้างโดย admin เท่านั้น — admin API ยังสร้างได้ตามปกติ)
 - **Email** provider ต้องเปิดอยู่ (ระบบแปลง username เป็น `<username>@kanban.local` ภายใน)
 
-### ทดสอบระบบ login
+### ทดสอบ (E2E ด้วย Playwright)
+
+ครั้งแรกติดตั้ง browser:
 
 ```bash
-npm run build && npm run start      # เทอร์มินัลที่ 1
-npm run test:smoke-auth             # เทอร์มินัลที่ 2: ทดสอบ redirect ของ proxy ด้วยผู้ใช้ชั่วคราว smoke_*
+npx playwright install chromium
+```
+
+รัน:
+
+```bash
+npm run test:e2e        # build + start แอปที่พอร์ต 3100 ให้เอง แล้วรันทุก test (desktop + mobile)
+npm run test:e2e:ui     # โหมด UI ดูทีละขั้น
+npx playwright show-report
+```
+
+- test อยู่ใน `e2e/` ไฟล์ `*.mobile.spec.ts` รันบน Pixel 7 (touch) ที่เหลือรันบน desktop
+- ผู้ใช้ทดสอบ `e2e_*` ถูกสร้างด้วย service role ต่อ test และลบทิ้งเมื่อจบ (global teardown ลบที่ค้างอีกรอบ) ข้อมูลจริงไม่ถูกแตะ
+- ถ้ามีเซิร์ฟเวอร์รันอยู่ที่พอร์ต 3100 แล้วจะใช้ตัวนั้นเลย (ไม่ build ใหม่) หรือชี้ไปที่อื่นด้วย `E2E_BASE_URL=...`
+- ⚠️ test รันกับโปรเจกต์ Supabase ที่อยู่ใน `.env.local` ถ้าแยก dev/prod ภายหลัง ให้ชี้ไปที่ dev
+
+สคริปต์ทดสอบอื่น:
+
+```bash
+npm run db:test-rls                 # RLS ระดับฐานข้อมูล
+npm run test:smoke-auth             # redirect ของ proxy ผ่าน HTTP (ต้อง npm run start ไว้ก่อน)
 ```
 
 ---

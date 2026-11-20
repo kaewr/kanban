@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { getSupabasePublicEnv } from "@/lib/env";
 import type { Database } from "@/types/database";
 
@@ -9,6 +10,9 @@ import type { Database } from "@/types/database";
 export async function createClient() {
   const { url, publishableKey } = getSupabasePublicEnv();
   const cookieStore = await cookies();
+  // Auth reads Date.now() (token expiry). With Cache Components that must never
+  // happen during a prerender (incl. runtime prefetch), so wait for the real request.
+  await connection();
 
   return createServerClient<Database>(url, publishableKey, {
     cookies: {
@@ -22,7 +26,7 @@ export async function createClient() {
           }
         } catch {
           // Called from a Server Component, where cookies are read-only.
-          // Session refresh will be handled by the proxy (added in M3).
+          // Session refresh is handled by src/proxy.ts.
         }
       },
     },

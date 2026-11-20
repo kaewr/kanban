@@ -17,6 +17,7 @@
 npm run dev          # รันบนเครื่อง
 npm run build        # ตรวจ build ก่อน push
 npm run lint
+npm run test:e2e     # Playwright (build + start ให้เอง)
 npx supabase migration new <name>   # สร้างไฟล์ migration
 npx supabase db push                # ใช้กับ dev ก่อนเสมอ
 ```
@@ -81,7 +82,7 @@ docs/requirements.md     # สเปก
 1. ทำทีละ milestone (ดูตารางใน `docs/requirements.md` หัวข้อ 10) บน branch ของตัวเอง เช่น `m5-board`
 2. วางแผนก่อนแก้ไฟล์: บอกไฟล์ที่จะสร้าง/แก้ และจุดที่สเปกไม่ชัด แล้วรออนุมัติ
 3. ถ้าสเปกไม่ชัดหรือขัดกันเอง ให้ถาม อย่าเดา
-4. ก่อนจบงาน: `npm run build` และ `npm run lint` ต้องผ่าน และสรุปวิธีทดสอบด้วยมือ
+4. ก่อนจบงาน: `npm run build`, `npm run lint` และ `npm run test:e2e` ต้องผ่าน เพิ่ม e2e test ของ FR ที่ทำใน `e2e/` และสรุปวิธีทดสอบด้วยมือ
 5. ข้อความ commit: `feat(FR-08): drag and drop between columns`
 
 ## Progress
