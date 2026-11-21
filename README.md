@@ -102,6 +102,14 @@ Dashboard → **Authentication → Sign In / Providers**:
 - ปิด **Allow new users to sign up** (BR-20: บัญชีสร้างโดย admin เท่านั้น — admin API ยังสร้างได้ตามปกติ)
 - **Email** provider ต้องเปิดอยู่ (ระบบแปลง username เป็น `<username>@kanban.local` ภายใน)
 
+### Unit test (Vitest)
+
+```bash
+npm test            # กติกาบอร์ด BR-01..10, การคำนวณปี, ลำดับการ์ด, board store
+```
+
+> บน Windows ให้รันจาก PowerShell หรือ cmd — ถ้ารันใน Git Bash Vitest อาจโหลดซ้ำสองชุดจนขึ้น error `failed to find the current suite`
+
 ### ทดสอบ (E2E ด้วย Playwright)
 
 ครั้งแรกติดตั้ง browser:

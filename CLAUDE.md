@@ -17,6 +17,7 @@
 npm run dev          # รันบนเครื่อง
 npm run build        # ตรวจ build ก่อน push
 npm run lint
+npm test             # Vitest unit test (src/**/*.test.ts) — รันใน PowerShell/cmd (Git Bash ทำให้ Vitest โหลดซ้ำ)
 npm run test:e2e     # Playwright (build + start ให้เอง)
 npx supabase migration new <name>   # สร้างไฟล์ migration
 npx supabase db push                # ใช้กับ dev ก่อนเสมอ
@@ -30,7 +31,8 @@ src/proxy.ts             # auth gate (Next 16 "proxy" = middleware) → src/lib/
 src/app/api/admin/       # API route ที่ใช้ service role key (server only) เริ่มด้วย requireAdminApi() จาก src/lib/admin/api.ts
 src/components/          # UI components
 src/lib/supabase/        # client.ts (browser), server.ts (server), admin.ts (service role, server only)
-src/stores/              # Zustand stores
+src/stores/              # Zustand stores (สร้างต่อ mount ผ่าน Provider ห้ามสร้างระดับ module — กัน state รั่วข้ามผู้ใช้ตอน SSR)
+src/lib/board/           # กติกาบอร์ดแบบ pure function (BR-01..10, ปี, position) + unit test
 src/types/               # types ของ DB และโดเมน
 supabase/migrations/     # SQL migrations
 docs/requirements.md     # สเปก
@@ -84,7 +86,7 @@ docs/requirements.md     # สเปก
 1. ทำทีละ milestone (ดูตารางใน `docs/requirements.md` หัวข้อ 10) บน branch ของตัวเอง เช่น `m5-board`
 2. วางแผนก่อนแก้ไฟล์: บอกไฟล์ที่จะสร้าง/แก้ และจุดที่สเปกไม่ชัด แล้วรออนุมัติ
 3. ถ้าสเปกไม่ชัดหรือขัดกันเอง ให้ถาม อย่าเดา
-4. ก่อนจบงาน: `npm run build`, `npm run lint` และ `npm run test:e2e` ต้องผ่าน เพิ่ม e2e test ของ FR ที่ทำใน `e2e/` และสรุปวิธีทดสอบด้วยมือ
+4. ก่อนจบงาน: `npm run build`, `npm run lint`, `npm test` และ `npm run test:e2e` ต้องผ่าน เพิ่ม e2e test ของ FR ที่ทำใน `e2e/` และสรุปวิธีทดสอบด้วยมือ
 5. ข้อความ commit: `feat(FR-08): drag and drop between columns`
 
 ## Progress
@@ -93,7 +95,7 @@ docs/requirements.md     # สเปก
 - [x] M2 ฐานข้อมูล + RLS
 - [x] M3 Login (FR-01–03)
 - [x] M4 จัดการผู้ใช้ (FR-04–06)
-- [ ] M5 บอร์ด (FR-07, 08, 12)
+- [x] M5 บอร์ด (FR-07, 08, 12)
 - [ ] M6 การบันทึก (FR-09, 10)
 - [ ] M7 ส่วน Admin (FR-11, 18–20)
 - [ ] M8 Dashboard (FR-13, 14, 16)
