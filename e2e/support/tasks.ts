@@ -70,3 +70,22 @@ export async function tasksOf(ownerId: string): Promise<TaskRow[]> {
   if (error) throw new Error(`tasksOf: ${error.message}`);
   return data;
 }
+
+export async function historyOf(taskId: string) {
+  const { data, error } = await service()
+    .from("task_history")
+    .select("from_status, to_status, changed_by, changed_at")
+    .eq("task_id", taskId)
+    .order("changed_at")
+    .order("id");
+  if (error) throw new Error(`historyOf: ${error.message}`);
+  return data;
+}
+
+/** Simulates an edit "from elsewhere": bumps version like a real save would. */
+export async function editElsewhere(taskId: string, title: string): Promise<void> {
+  const { data, error } = await service().from("tasks").select("version").eq("id", taskId).single();
+  if (error) throw new Error(`editElsewhere: ${error.message}`);
+  const res = await service().from("tasks").update({ title, version: data.version + 1 }).eq("id", taskId);
+  if (res.error) throw new Error(`editElsewhere: ${res.error.message}`);
+}

@@ -115,3 +115,18 @@ export async function getProfile(username: string) {
   if (error) throw new Error(`getProfile: ${error.message}`);
   return data;
 }
+
+/** A Supabase client signed in as the user with the publishable key (RLS applies). */
+export async function signedInClient(user: { username: string; password: string }): Promise<SupabaseClient<Database>> {
+  const client = createClient<Database>(
+    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+  const { error } = await client.auth.signInWithPassword({
+    email: `${user.username}@kanban.local`,
+    password: user.password,
+  });
+  if (error) throw new Error(`signedInClient: ${error.message}`);
+  return client;
+}

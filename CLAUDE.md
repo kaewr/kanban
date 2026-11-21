@@ -67,7 +67,9 @@ docs/requirements.md     # สเปก
 - การสร้าง/แก้/ลาก/ลบงาน เปลี่ยนแค่ Zustand state จนกว่าผู้ใช้กด "บันทึก" (FR-09)
 - บันทึกผ่าน `save_board_changes(p_changes jsonb)` ครั้งเดียว แบบ transaction ตรวจ `version` ทุกงาน
 - เก็บ `moved_at` ทุกครั้งที่งานเปลี่ยนคอลัมน์ และใช้ค่านี้ใน `task_history.changed_at`
-- กติกา `started_at` / `completed_at` ตาม BR-01, BR-03, BR-04
+- กติกา `started_at` / `completed_at` ตาม BR-01, BR-03, BR-04 (client ใช้ใน store, server บังคับซ้ำใน `save_board_changes`)
+- เมื่อชน: ไม่เขียนอะไรเลย → ผู้ใช้โหลดเฉพาะงานที่ชนใหม่ การเปลี่ยนแปลงอื่นยังอยู่
+- ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
 ### Auth
 - username → `<username>@kanban.local` ก่อนเรียก Supabase Auth (BR-21) ไม่แสดงอีเมลนี้ใน UI
@@ -96,6 +98,6 @@ docs/requirements.md     # สเปก
 - [x] M3 Login (FR-01–03)
 - [x] M4 จัดการผู้ใช้ (FR-04–06)
 - [x] M5 บอร์ด (FR-07, 08, 12)
-- [ ] M6 การบันทึก (FR-09, 10)
+- [x] M6 การบันทึก (FR-09, 10)
 - [ ] M7 ส่วน Admin (FR-11, 18–20)
 - [ ] M8 Dashboard (FR-13, 14, 16)

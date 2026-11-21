@@ -7,6 +7,9 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { changedTasks } from "@/lib/board/changes";
 import { useBoardStore } from "@/stores/board-store-provider";
 import type { YearType } from "@/types/domain";
+import { ConflictDialog } from "./conflict-dialog";
+import { useConfirmLeave } from "./unsaved-guard";
+import { useBoardSave } from "./use-board-save";
 
 function yearLabel(year: number, yearType: YearType): string {
   return yearType === "fiscal" ? `ปีงบประมาณ ${year}` : `พ.ศ. ${year}`;
@@ -14,22 +17,33 @@ function yearLabel(year: number, yearType: YearType): string {
 
 export function BoardToolbar({ year, years, yearType }: { year: number; years: number[]; yearType: YearType }) {
   const router = useRouter();
+  const confirmLeave = useConfirmLeave();
   const tasks = useBoardStore((s) => s.tasks);
   const snapshot = useBoardStore((s) => s.snapshot);
   const changeCount = useMemo(() => changedTasks(tasks, snapshot).length, [tasks, snapshot]);
+  const { status, save, conflicts, reloading, reloadConflicts, dismissConflicts } = useBoardSave();
+
+  const saving = status === "saving";
+  let message = "ไม่มีรายการที่ยังไม่บันทึก";
+  if (saving) message = "กำลังบันทึก…";
+  else if (changeCount > 0) message = `ยังไม่บันทึก ${changeCount} รายการ`;
+  else if (status === "saved") message = "บันทึกแล้ว";
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <h1 className="text-2xl font-semibold">บอร์ด</h1>
 
-      {/* FR-12 */}
+      {/* FR-12; FR-10 asks first when there are unsaved changes */}
       <label className="flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">ปี</span>
         <NativeSelect
           aria-label="เลือกปี"
           className="w-auto"
           value={year}
-          onChange={(e) => router.push(`/board?year=${e.target.value}`)}
+          onChange={(e) => {
+            const target = `/board?year=${e.target.value}`;
+            confirmLeave(() => router.push(target));
+          }}
         >
           {years.map((y) => (
             <option key={y} value={y}>
@@ -39,15 +53,27 @@ export function BoardToolbar({ year, years, yearType }: { year: number; years: n
         </NativeSelect>
       </label>
 
-      {/* FR-09 counter; saving arrives in M6 */}
-      <div className="ml-auto flex items-center gap-3">
+      {/* FR-09 */}
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+        {status === "error" && (
+          <p role="alert" className="text-sm text-destructive">
+            บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง
+          </p>
+        )}
         <p role="status" aria-live="polite" data-testid="unsaved-count" className="text-sm text-muted-foreground">
-          {changeCount > 0 ? `ยังไม่บันทึก ${changeCount} รายการ` : "ไม่มีรายการที่ยังไม่บันทึก"}
+          {message}
         </p>
-        <Button disabled title="การบันทึกจะเปิดใช้ในเวอร์ชันถัดไป">
-          บันทึก
+        <Button onClick={save} disabled={changeCount === 0 || saving}>
+          {saving ? "กำลังบันทึก…" : "บันทึก"}
         </Button>
       </div>
+
+      <ConflictDialog
+        conflicts={conflicts}
+        reloading={reloading}
+        onReload={reloadConflicts}
+        onDismiss={dismissConflicts}
+      />
     </div>
   );
 }

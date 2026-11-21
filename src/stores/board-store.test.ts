@@ -105,3 +105,62 @@ describe("board store", () => {
     expect(changes(store)).toHaveLength(0);
   });
 });
+
+describe("board store after saving", () => {
+  it("applySaved makes saved rows the new snapshot", () => {
+    const store = setup();
+    store.getState().moveTask("a", "in_progress", 1024);
+    const sent = changedTasks(store.getState().tasks, store.getState().snapshot);
+    const saved = { ...(store.getState().tasks.a as BoardTask), version: 2, moves: [] };
+    store.getState().applySaved([saved], sent);
+    expect(store.getState().tasks.a).toMatchObject({ version: 2, moves: [] });
+    expect(changes(store)).toHaveLength(0);
+  });
+
+  it("keeps edits made while the save was in flight", () => {
+    const store = setup();
+    store.getState().moveTask("a", "in_progress", 1024);
+    const sent = changedTasks(store.getState().tasks, store.getState().snapshot);
+    const saved = { ...(store.getState().tasks.a as BoardTask), version: 2, moves: [] };
+    store.getState().moveTask("a", "review", 1024); // after sending
+    store.getState().applySaved([saved], sent);
+    const a = store.getState().tasks.a;
+    expect(a).toMatchObject({ status: "review", version: 2 });
+    expect(a?.moves).toEqual([expect.objectContaining({ from: "in_progress", to: "review" })]);
+    expect(changes(store)).toHaveLength(1);
+  });
+
+  it("removes soft-deleted rows and swaps a created task for its saved row", () => {
+    const store = setup();
+    store.getState().deleteTask("a");
+    const id = store.getState().createTask("long_term", input);
+    const sent = changedTasks(store.getState().tasks, store.getState().snapshot);
+    const deletedRow = { ...(store.getState().tasks.a as BoardTask), isDeleted: true, version: 2 };
+    const createdRow = { ...(store.getState().tasks[id] as BoardTask), isNew: false, moves: [] };
+    store.getState().applySaved([deletedRow, createdRow], sent);
+    expect(store.getState().tasks.a).toBeUndefined();
+    expect(store.getState().tasks[id]).toMatchObject({ isNew: false });
+    expect(changes(store)).toHaveLength(0);
+  });
+
+  it("reloadTasks takes the database version of conflicting tasks only", () => {
+    const store = setup();
+    store.getState().updateTask("a", { ...input, title: "แก้ของฉัน" });
+    store.getState().updateTask("b", { ...input, title: "แก้อีกงาน" });
+    const fresh = { ...(store.getState().snapshot.a as BoardTask), title: "จากที่อื่น", version: 5 };
+    store.getState().reloadTasks(["a"], [fresh]);
+    expect(store.getState().tasks.a).toMatchObject({ title: "จากที่อื่น", version: 5 });
+    expect(store.getState().tasks.b?.title).toBe("แก้อีกงาน");
+    expect(changes(store)).toHaveLength(1);
+  });
+
+  it("reloadTasks drops tasks deleted elsewhere; restoreDraft puts draft tasks back", () => {
+    const store = setup();
+    store.getState().reloadTasks(["b"], []);
+    expect(store.getState().tasks.b).toBeUndefined();
+    const draftTask = { ...(store.getState().tasks.a as BoardTask), title: "จากร่าง" };
+    store.getState().restoreDraft([draftTask]);
+    expect(store.getState().tasks.a?.title).toBe("จากร่าง");
+    expect(changes(store)).toHaveLength(1);
+  });
+});

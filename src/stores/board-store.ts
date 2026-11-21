@@ -20,6 +20,19 @@ export type BoardActions = {
   updateTask: (id: string, input: TaskInput) => void;
   moveTask: (id: string, to: TaskStatus, position: number) => void;
   deleteTask: (id: string) => void;
+  /**
+   * After a successful save: saved rows become the new snapshot (FR-09).
+   * `sent` is the task objects that were sent; a task edited again while the save
+   * was in flight keeps those newer local edits on top of the saved row.
+   */
+  applySaved: (rows: BoardTask[], sent: BoardTask[]) => void;
+  /**
+   * After a conflict: take the database version of these tasks (dropping local edits
+   * to them only); ids missing from `rows` were deleted elsewhere.
+   */
+  reloadTasks: (ids: string[], rows: BoardTask[]) => void;
+  /** FR-10: put draft tasks back on top of the loaded board. */
+  restoreDraft: (draft: BoardTask[]) => void;
 };
 
 export type BoardStore = BoardState & BoardActions;
@@ -131,6 +144,64 @@ export function createBoardStore(init: BoardInit) {
           return { tasks: rest };
         }
         return { tasks: { ...s.tasks, [id]: { ...task, isDeleted: true } } }; // BR-12
+      });
+    },
+
+    applySaved: (rows, sent) => {
+      set((s) => {
+        const tasks = { ...s.tasks };
+        const snapshot = { ...s.snapshot };
+        const sentById = new Map(sent.map((t) => [t.id, t]));
+        for (const row of rows) {
+          const local = tasks[row.id];
+          const sentTask = sentById.get(row.id);
+          const editedSince = local !== undefined && sentTask !== undefined && local !== sentTask;
+
+          if (row.isDeleted) {
+            delete snapshot[row.id];
+            if (!editedSince) delete tasks[row.id];
+            continue;
+          }
+          snapshot[row.id] = row;
+          tasks[row.id] =
+            editedSince && local
+              ? {
+                  ...local,
+                  version: row.version,
+                  isNew: false,
+                  createdAt: row.createdAt,
+                  moves: local.moves.slice(sentTask?.moves.length ?? 0),
+                }
+              : row;
+        }
+        return { tasks, snapshot };
+      });
+    },
+
+    reloadTasks: (ids, rows) => {
+      set((s) => {
+        const tasks = { ...s.tasks };
+        const snapshot = { ...s.snapshot };
+        const fresh = new Map(rows.map((r) => [r.id, r]));
+        for (const id of ids) {
+          const row = fresh.get(id);
+          if (row && !row.isDeleted) {
+            tasks[id] = row;
+            snapshot[id] = row;
+          } else {
+            delete tasks[id];
+            delete snapshot[id];
+          }
+        }
+        return { tasks, snapshot };
+      });
+    },
+
+    restoreDraft: (draft) => {
+      set((s) => {
+        const tasks = { ...s.tasks };
+        for (const task of draft) tasks[task.id] = task;
+        return { tasks };
       });
     },
   }));

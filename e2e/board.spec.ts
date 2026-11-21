@@ -1,5 +1,5 @@
 // M5: FR-07, FR-08, FR-12, BR-01..04, BR-07, BR-08, BR-12 (state only — saving is M6)
-import { expect, gotoReady, loginAs, test } from "./fixtures";
+import { expect, loginAs, test } from "./fixtures";
 import {
   card,
   cardByTitle,
@@ -206,11 +206,8 @@ test.describe("board hints", () => {
   });
 });
 
-test.describe("M5 scope", () => {
-  test("changes stay in the browser: reload restores the saved board and the database is untouched", async ({
-    page,
-    makeUser,
-  }) => {
+test.describe("FR-09 state only until save", () => {
+  test("board changes do not touch the database before บันทึก", async ({ page, makeUser }) => {
     const user = await makeUser();
     const [task] = await seedTasks(user.id, [{ title: "ยังไม่บันทึก", status: "short_term" }]);
     const before = await tasksOf(user.id);
@@ -219,10 +216,9 @@ test.describe("M5 scope", () => {
     await page.getByRole("button", { name: "ตัวเลือกงาน ยังไม่บันทึก" }).click();
     await page.getByRole("menuitem", { name: "กำลังทำ" }).click();
     await expect(cardByTitle(column(page, "in_progress"), "ยังไม่บันทึก")).toBeVisible();
+    await expect(card(page, task.id).getByTestId("task-unsaved")).toBeVisible();
 
-    await gotoReady(page, "/board");
-    await expect(cardByTitle(column(page, "short_term"), "ยังไม่บันทึก")).toBeVisible();
-    await expect(card(page, task.id).getByTestId("task-unsaved")).toHaveCount(0);
+    await page.waitForTimeout(500);
     expect(await tasksOf(user.id)).toEqual(before);
   });
 });

@@ -13,7 +13,12 @@ export function BoardStoreProvider({ init, children }: { init: BoardInit; childr
 }
 
 export function useBoardStore<T>(selector: (state: BoardStore) => T): T {
+  return useStore(useBoardStoreApi(), selector);
+}
+
+/** The store itself, for reading state in event handlers and subscribing. */
+export function useBoardStoreApi(): BoardStoreApi {
   const store = useContext(BoardStoreContext);
   if (!store) throw new Error("useBoardStore must be used inside BoardStoreProvider");
-  return useStore(store, selector);
+  return store;
 }

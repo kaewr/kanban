@@ -224,6 +224,7 @@ export type Database = {
     Functions: {
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      save_board_changes: { Args: { p_changes: Json }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
