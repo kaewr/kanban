@@ -255,6 +255,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      dashboard_summary: {
+        Args: { p_owner_id?: string; p_unit_id?: string; p_year: number }
+        Returns: Json
+      }
       is_active_user: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       reorder_categories: { Args: { p_ids: string[] }; Returns: undefined }

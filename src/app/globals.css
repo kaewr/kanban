@@ -78,6 +78,8 @@
   --ring: var(--brand-purple);
   --chart-1: var(--brand-purple);
   --chart-2: var(--brand-gold);
+  --chart-bar: #8d38c9; /* single-series bars; validated against the light surface */
+  --chart-grid: #ece8f2;
   --chart-3: #38bdf8;
   --chart-4: #34d399;
   --chart-5: #fb7185;
@@ -118,6 +120,8 @@
   --ring: var(--brand-purple);
   --chart-1: var(--brand-purple);
   --chart-2: var(--brand-gold);
+  --chart-bar: #a466dc; /* dark step inside the lightness band (validated) */
+  --chart-grid: #2c2738;
   --chart-3: #7dd3fc;
   --chart-4: #6ee7b7;
   --chart-5: #fda4af;

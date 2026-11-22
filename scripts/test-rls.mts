@@ -228,6 +228,15 @@ async function main(): Promise<void> {
     check("A cannot reorder categories (FR-18)", reorder.error !== null);
 
     // BR-29 / BR-30 / BR-31
+    // FR-16: the dashboard function runs as the caller, so B's tasks are not counted.
+    const dash = await c.rpc("dashboard_summary", { p_year: YEAR, p_owner_id: b.id });
+    const dashData = dash.data as { totals?: { open?: number }; people?: unknown[] } | null;
+    check(
+      "A's dashboard does not count B's tasks",
+      dash.error === null && dashData?.totals?.open === 0 && (dashData?.people ?? []).length === 0,
+      dash.error?.message,
+    );
+
     const units = await c.from("units").select("id");
     check("A can read units", (units.data ?? []).length === 4, units.error?.message);
     const unitIns = await c.from("units").insert({ id: "rls_test", name: "rls_test_unit" });

@@ -17,11 +17,15 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useMemo, useState } from "react";
 import { BOARD_COLUMNS, STATUS_LABEL } from "@/lib/board/constants";
+import { bangkokDate } from "@/lib/board/dates";
+import { EMPTY_FILTER, matchesFilter, type BoardFilter } from "@/lib/board/filter";
 import { positionBetween } from "@/lib/board/position";
+import { dueState } from "@/lib/board/rules";
 import type { BoardCategory, BoardTask } from "@/lib/board/types";
 import { useBoardStore } from "@/stores/board-store-provider";
 import { TASK_STATUSES, type TaskStatus } from "@/types/domain";
 import { BoardColumn, COLUMN_ID_PREFIX } from "./board-column";
+import { BoardFilters } from "./board-filters";
 import { DeleteTaskDialog } from "./delete-task-dialog";
 import { TaskCardContent } from "./task-card";
 import { TaskDialog, type TaskDialogMode } from "./task-dialog";
@@ -44,6 +48,9 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<TaskDialogMode | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<BoardFilter>(EMPTY_FILTER);
+  // Bangkok date for FR-13 highlights, fixed for the life of the page.
+  const [today] = useState(() => bangkokDate(new Date()));
 
   const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
@@ -56,6 +63,17 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
     for (const status of TASK_STATUSES) result[status].sort((a, b) => a.position - b.position);
     return result;
   }, [tasks, year]);
+
+  // FR-14: what is shown. Drag positions are still computed on the full columns.
+  const shownColumns = useMemo<Columns>(
+    () =>
+      Object.fromEntries(
+        TASK_STATUSES.map((s) => [s, columns[s].filter((t) => matchesFilter(t, filter, today))]),
+      ) as Columns,
+    [columns, filter, today],
+  );
+  const total = TASK_STATUSES.reduce((n, s) => n + columns[s].length, 0);
+  const shown = TASK_STATUSES.reduce((n, s) => n + shownColumns[s].length, 0);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -138,6 +156,10 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
           },
         }}
       >
+        <div className="mb-3">
+          <BoardFilters filter={filter} onChange={setFilter} categories={categories} shown={shown} total={total} />
+        </div>
+
         {/* Phones: one column per screen with snap scrolling; desktop: all five. */}
         <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:px-0">
           {BOARD_COLUMNS.map((column) => (
@@ -146,7 +168,9 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
               status={column.status}
               label={column.label}
               hint={column.hint}
-              tasks={columns[column.status]}
+              tasks={shownColumns[column.status]}
+              totalCount={columns[column.status].length}
+              today={today}
               snapshot={snapshot}
               categoryNames={categoryNames}
               onAdd={() => setDialog({ kind: "create", status: column.status })}
@@ -163,6 +187,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
               task={activeTask}
               categoryName={categoryNames.get(activeTask.categoryId) ?? ""}
               unsaved={false}
+              due={dueState(activeTask, today)}
               className="rotate-2 cursor-grabbing shadow-xl ring-primary/30"
             />
           ) : null}

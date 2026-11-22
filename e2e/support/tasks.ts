@@ -38,6 +38,9 @@ export type SeedTask = {
   startedAt?: string | null;
   completedAt?: string | null;
   createdAt?: string;
+  priority?: 1 | 2 | 3;
+  description?: string | null;
+  categoryId?: string;
 };
 
 export async function seedTasks(ownerId: string, tasks: SeedTask[]): Promise<TaskRow[]> {
@@ -47,7 +50,9 @@ export async function seedTasks(ownerId: string, tasks: SeedTask[]): Promise<Tas
     owner_id: ownerId,
     title: t.title,
     status: t.status,
-    category_id: categoryId,
+    category_id: t.categoryId ?? categoryId,
+    priority: t.priority ?? 2,
+    description: t.description ?? null,
     year: t.year ?? year,
     position: t.position ?? (i + 1) * 1024,
     due_date: t.dueDate ?? null,
@@ -125,4 +130,20 @@ export async function setFiscalStartMonth(month: number): Promise<void> {
     .update({ fiscal_start_month: month, updated_by: null })
     .eq("id", true);
   if (error) throw new Error(`setFiscalStartMonth: ${error.message}`);
+}
+
+/** Writes task_history rows directly (dashboard review/rework metrics). */
+export async function seedHistory(
+  rows: { taskId: string; from: TaskStatus | null; to: TaskStatus; by: string; at: string }[],
+): Promise<void> {
+  const { error } = await service()
+    .from("task_history")
+    .insert(rows.map((r) => ({ task_id: r.taskId, from_status: r.from, to_status: r.to, changed_by: r.by, changed_at: r.at })));
+  if (error) throw new Error(`seedHistory: ${error.message}`);
+}
+
+export async function categoryByName(name: string): Promise<{ id: string; name: string }> {
+  const { data, error } = await service().from("categories").select("id, name").eq("name", name).single();
+  if (error) throw new Error(`categoryByName: ${error.message}`);
+  return data;
 }

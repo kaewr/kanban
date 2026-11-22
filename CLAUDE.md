@@ -88,6 +88,8 @@ docs/requirements.md     # สเปก
 - เมื่อชน: ไม่เขียนอะไรเลย → ผู้ใช้โหลดเฉพาะงานที่ชนใหม่ การเปลี่ยนแปลงอื่นยังอยู่
 - Admin เปิดบอร์ดคนอื่นที่ `/board?user=<username>` (FR-11) — server ตรวจ role ก่อนใช้ `?user=` (user ทั่วไปถูกเพิกเฉย) + แถบ `ForeignBoardBanner` (BR-28) / ลิงก์บอร์ดสร้างด้วย `boardHref()`
 - หมวดหมู่ (FR-18) และตั้งค่าปี (FR-19) แก้ผ่าน Server Action ด้วย session ของ admin (RLS บังคับ) ไม่ใช้ service role / เรียงลำดับผ่าน `reorder_categories(p_ids)` / เปลี่ยนรูปแบบปีไม่คำนวณ `tasks.year` ของงานเดิมใหม่
+- FR-13 ไฮไลต์: `dueState()` ใน `src/lib/board/rules.ts` (เกินกำหนด = แดง, วันนี้ถึง +3 วัน = ส้ม, งานเสร็จไม่ไฮไลต์) / FR-14 ตัวกรองบนบอร์ดอยู่ใน state ของ `BoardView` เท่านั้น (ไม่บันทึก ล้างเมื่อ refresh) ตำแหน่งตอนลากคำนวณจากคอลัมน์เต็ม
+- FR-16 Dashboard คำนวณใน `dashboard_summary(p_year, p_unit_id, p_owner_id)` (security invoker → RLS) ขอบเขต = งานที่ `tasks.year` = ปีที่เลือก / กราฟใช้ token `--chart-bar` (ผ่าน dataviz validator ทั้ง light/dark) และมี "ดูเป็นตาราง"
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
 ### Auth
@@ -121,4 +123,4 @@ docs/requirements.md     # สเปก
 - [x] M5 บอร์ด (FR-07, 08, 12)
 - [x] M6 การบันทึก (FR-09, 10)
 - [x] M7 ส่วน Admin (FR-11, 18–20)
-- [ ] M8 Dashboard (FR-13, 14, 16)
+- [x] M8 Dashboard (FR-13, 14, 16)

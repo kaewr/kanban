@@ -3,6 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  AlarmClockIcon,
   CalendarClockIcon,
   CircleCheckIcon,
   FlagIcon,
@@ -12,6 +13,7 @@ import {
   PlayIcon,
   TagIcon,
   Trash2Icon,
+  TriangleAlertIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BOARD_COLUMNS, PRIORITY_LABEL } from "@/lib/board/constants";
 import { formatThaiDate } from "@/lib/board/dates";
-import { suggestsLongTerm } from "@/lib/board/rules";
+import { dueLabel, suggestsLongTerm, type DueState } from "@/lib/board/rules";
 import type { BoardTask } from "@/lib/board/types";
 import { cn } from "@/lib/utils";
 import type { TaskStatus } from "@/types/domain";
@@ -33,22 +35,41 @@ import { PRIORITY_STYLE, STATUS_STYLE } from "./status-style";
 
 const chip = "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset";
 
+// FR-13: red for overdue, orange for due soon.
+const DUE_STYLE = {
+  overdue: {
+    card: "border-l-4 border-l-rose-500 dark:border-l-rose-400",
+    chip: "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/50 dark:text-rose-200 dark:ring-rose-900",
+    date: "font-medium text-rose-700 dark:text-rose-300",
+    icon: TriangleAlertIcon,
+  },
+  soon: {
+    card: "border-l-4 border-l-amber-400",
+    chip: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-900",
+    date: "font-medium text-amber-800 dark:text-amber-300",
+    icon: AlarmClockIcon,
+  },
+} as const;
+
 type ContentProps = {
   task: BoardTask;
   categoryName: string;
   unsaved: boolean;
+  due?: DueState;
   className?: string;
   menu?: React.ReactNode;
 };
 
 /** Presentational card, also used for the drag overlay. */
-export function TaskCardContent({ task, categoryName, unsaved, className, menu }: ContentProps) {
+export function TaskCardContent({ task, categoryName, unsaved, due = null, className, menu }: ContentProps) {
   const showProgress = task.status === "long_term" && task.progress !== null;
+  const dueStyle = due ? DUE_STYLE[due.kind] : null;
 
   return (
     <div
       className={cn(
         "flex flex-col gap-2.5 rounded-xl bg-card p-3 text-sm shadow-xs ring-1 ring-foreground/8 transition-[box-shadow,transform] duration-150",
+        dueStyle?.card,
         className,
       )}
     >
@@ -68,6 +89,12 @@ export function TaskCardContent({ task, categoryName, unsaved, className, menu }
           <TagIcon className="size-3" aria-hidden />
           {categoryName}
         </span>
+        {due && dueStyle && (
+          <span className={cn(chip, dueStyle.chip)} data-testid="task-due-state" data-kind={due.kind}>
+            <dueStyle.icon className="size-3" aria-hidden />
+            {dueLabel(due)}
+          </span>
+        )}
         {unsaved && (
           <span
             className="inline-flex items-center gap-1 text-xs font-medium text-brand-gold"
@@ -101,7 +128,7 @@ export function TaskCardContent({ task, categoryName, unsaved, className, menu }
       {(task.dueDate || task.startedAt || task.completedAt) && (
         <dl className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-dashed pt-2 text-xs text-muted-foreground tabular-nums">
           {task.dueDate && (
-            <div className="flex items-center gap-1" title="กำหนดเสร็จ">
+            <div className={cn("flex items-center gap-1", dueStyle?.date)} title="กำหนดเสร็จ">
               <dt>
                 <CalendarClockIcon className="size-3.5" aria-hidden />
                 <span className="sr-only">กำหนด</span>
@@ -147,12 +174,13 @@ type SortableProps = {
   task: BoardTask;
   categoryName: string;
   unsaved: boolean;
+  due: DueState;
   onEdit: () => void;
   onDelete: () => void;
   onMove: (to: TaskStatus) => void;
 };
 
-export function SortableTaskCard({ task, categoryName, unsaved, onEdit, onDelete, onMove }: SortableProps) {
+export function SortableTaskCard({ task, categoryName, unsaved, due, onEdit, onDelete, onMove }: SortableProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
 
   // React events bubble out of portals to the card, so stop them here: the menu must
@@ -215,6 +243,7 @@ export function SortableTaskCard({ task, categoryName, unsaved, onEdit, onDelete
         task={task}
         categoryName={categoryName}
         unsaved={unsaved}
+        due={due}
         menu={menu}
         className="cursor-grab hover:-translate-y-px hover:shadow-md hover:ring-primary/25 active:cursor-grabbing"
       />

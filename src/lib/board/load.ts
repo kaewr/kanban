@@ -18,6 +18,7 @@ export type BoardOwner = {
   username: string;
   displayName: string;
   position?: string | null;
+  unitId?: string | null;
   unitName?: string | null;
   isActive?: boolean;
 };
@@ -27,7 +28,7 @@ export async function loadBoardOwners(): Promise<BoardOwner[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, username, display_name, position, is_active, units(name)")
+    .select("id, username, display_name, position, is_active, unit_id, units(name)")
     .order("is_active", { ascending: false })
     .order("display_name");
   if (error) throw new Error("โหลดรายชื่อผู้ใช้ไม่สำเร็จ");
@@ -36,6 +37,7 @@ export async function loadBoardOwners(): Promise<BoardOwner[]> {
     username: p.username,
     displayName: p.display_name,
     position: p.position,
+    unitId: p.unit_id,
     unitName: p.units?.name ?? null,
     isActive: p.is_active,
   }));

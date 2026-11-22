@@ -66,3 +66,27 @@ export function suggestsLongTerm(task: Pick<BoardTask, "status" | "dueDate" | "c
 export function exceedsWipLimit(inProgressCount: number): boolean {
   return inProgressCount > WIP_LIMIT;
 }
+
+/** FR-13: tasks due within this many days (today included) are highlighted orange. */
+export const DUE_SOON_DAYS = 3;
+
+export type DueState = { kind: "overdue"; days: number } | { kind: "soon"; days: number } | null;
+
+/**
+ * FR-13: overdue = due date before today (red); due today .. today + 3 days = soon (orange).
+ * Finished tasks are never highlighted. `today` is a Bangkok date (YYYY-MM-DD).
+ */
+export function dueState(task: Pick<BoardTask, "status" | "dueDate">, today: string): DueState {
+  if (task.status === "done" || !task.dueDate) return null;
+  const days = daysBetween(today, task.dueDate);
+  if (days < 0) return { kind: "overdue", days: -days };
+  if (days <= DUE_SOON_DAYS) return { kind: "soon", days };
+  return null;
+}
+
+export function dueLabel(state: NonNullable<DueState>): string {
+  if (state.kind === "overdue") return `เกินกำหนด ${state.days} วัน`;
+  if (state.days === 0) return "ครบกำหนดวันนี้";
+  if (state.days === 1) return "ครบกำหนดพรุ่งนี้";
+  return `อีก ${state.days} วันครบกำหนด`;
+}

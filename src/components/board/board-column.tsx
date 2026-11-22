@@ -6,7 +6,7 @@ import { PlusIcon, TriangleAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isTaskChanged } from "@/lib/board/changes";
 import { WIP_LIMIT } from "@/lib/board/constants";
-import { exceedsWipLimit } from "@/lib/board/rules";
+import { dueState, exceedsWipLimit } from "@/lib/board/rules";
 import type { BoardTask } from "@/lib/board/types";
 import { cn } from "@/lib/utils";
 import type { TaskStatus } from "@/types/domain";
@@ -19,7 +19,11 @@ type Props = {
   status: TaskStatus;
   label: string;
   hint: string;
+  /** Tasks shown (after FR-14 filters). */
   tasks: BoardTask[];
+  /** All tasks of the column, for the WIP warning (BR-08) which ignores filters. */
+  totalCount: number;
+  today: string;
   snapshot: Record<string, BoardTask>;
   categoryNames: Map<string, string>;
   onAdd: () => void;
@@ -28,9 +32,23 @@ type Props = {
   onMove: (id: string, to: TaskStatus) => void;
 };
 
-export function BoardColumn({ status, label, hint, tasks, snapshot, categoryNames, onAdd, onEdit, onDelete, onMove }: Props) {
+export function BoardColumn({
+  status,
+  label,
+  hint,
+  tasks,
+  totalCount,
+  today,
+  snapshot,
+  categoryNames,
+  onAdd,
+  onEdit,
+  onDelete,
+  onMove,
+}: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: `${COLUMN_ID_PREFIX}${status}` });
-  const wip = status === "in_progress" && exceedsWipLimit(tasks.length); // BR-08
+  const wip = status === "in_progress" && exceedsWipLimit(totalCount); // BR-08
+  const filtered = tasks.length !== totalCount;
   const style = STATUS_STYLE[status];
   const Icon = style.icon;
 
@@ -51,9 +69,9 @@ export function BoardColumn({ status, label, hint, tasks, snapshot, categoryName
           </h2>
           <span
             className="rounded-full bg-background/80 px-2 py-0.5 text-xs font-medium text-muted-foreground tabular-nums ring-1 ring-foreground/5"
-            aria-label={`${tasks.length} งาน`}
+            aria-label={filtered ? `แสดง ${tasks.length} จาก ${totalCount} งาน` : `${tasks.length} งาน`}
           >
-            {tasks.length}
+            {filtered ? `${tasks.length}/${totalCount}` : tasks.length}
           </span>
         </div>
         <p className="px-1 text-xs text-muted-foreground">{hint}</p>
@@ -83,6 +101,7 @@ export function BoardColumn({ status, label, hint, tasks, snapshot, categoryName
               task={task}
               categoryName={categoryNames.get(task.categoryId) ?? "—"}
               unsaved={task.isNew || isTaskChanged(task, snapshot[task.id])}
+              due={dueState(task, today)}
               onEdit={() => onEdit(task.id)}
               onDelete={() => onDelete(task.id)}
               onMove={(to) => onMove(task.id, to)}
