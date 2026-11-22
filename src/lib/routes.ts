@@ -3,6 +3,7 @@ export const ROUTES = {
   home: "/board",
   board: "/board",
   dashboard: "/dashboard",
+  leave: "/leave",
   admin: "/admin",
   adminUsers: "/admin/users",
   adminCategories: "/admin/categories",

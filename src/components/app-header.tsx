@@ -35,6 +35,7 @@ export async function AppHeader() {
   const items: NavItem[] = [
     { href: ROUTES.board, label: "บอร์ด", icon: "board" },
     { href: ROUTES.dashboard, label: "Dashboard", icon: "dashboard" },
+    { href: ROUTES.leave, label: "วันลา", icon: "leave" },
   ];
   if (profile.role === "admin") {
     items.push({ href: ROUTES.admin, label: "Admin", icon: "admin" });

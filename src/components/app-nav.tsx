@@ -1,12 +1,12 @@
 "use client";
 
-import { KanbanIcon, LayoutDashboardIcon, ShieldIcon, type LucideIcon } from "lucide-react";
+import { CalendarOffIcon, KanbanIcon, LayoutDashboardIcon, ShieldIcon, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 // Icons are looked up by name: components cannot be passed from the server header.
-const ICONS = { board: KanbanIcon, dashboard: LayoutDashboardIcon, admin: ShieldIcon } satisfies Record<
+const ICONS = { board: KanbanIcon, dashboard: LayoutDashboardIcon, leave: CalendarOffIcon, admin: ShieldIcon } satisfies Record<
   string,
   LucideIcon
 >;

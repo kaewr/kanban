@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentBoardYear, fiscalRangeLabel, parseYearParam, yearOptions } from "./year";
+import { currentBoardYear, fiscalRangeLabel, parseYearParam, yearDateRange, yearOptions } from "./year";
 
 // Instants are given in UTC; the board uses Asia/Bangkok (UTC+7).
 const at = (iso: string) => new Date(iso);
@@ -49,5 +49,13 @@ describe("fiscalRangeLabel", () => {
   it("names the months a fiscal year covers", () => {
     expect(fiscalRangeLabel(2570, 10)).toBe("ตุลาคม 2569 – กันยายน 2570");
     expect(fiscalRangeLabel(2570, 1)).toBe("มกราคม – ธันวาคม 2570");
+  });
+});
+
+describe("yearDateRange", () => {
+  it("fiscal 2570 from October = 2026-10-01 .. 2027-09-30; calendar 2569 = 2026", () => {
+    expect(yearDateRange(2570, "fiscal", 10)).toEqual({ from: "2026-10-01", to: "2027-09-30" });
+    expect(yearDateRange(2569, "calendar", 10)).toEqual({ from: "2026-01-01", to: "2026-12-31" });
+    expect(yearDateRange(2570, "fiscal", 3)).toEqual({ from: "2026-03-01", to: "2027-02-28" });
   });
 });

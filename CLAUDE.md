@@ -90,6 +90,7 @@ docs/requirements.md     # สเปก
 - หมวดหมู่ (FR-18) และตั้งค่าปี (FR-19) แก้ผ่าน Server Action ด้วย session ของ admin (RLS บังคับ) ไม่ใช้ service role / เรียงลำดับผ่าน `reorder_categories(p_ids)` / เปลี่ยนรูปแบบปีไม่คำนวณ `tasks.year` ของงานเดิมใหม่
 - FR-13 ไฮไลต์: `dueState()` ใน `src/lib/board/rules.ts` (เกินกำหนด = แดง, วันนี้ถึง +3 วัน = ส้ม, งานเสร็จไม่ไฮไลต์) / FR-14 ตัวกรองบนบอร์ดอยู่ใน state ของ `BoardView` เท่านั้น (ไม่บันทึก ล้างเมื่อ refresh) ตำแหน่งตอนลากคำนวณจากคอลัมน์เต็ม
 - FR-16 Dashboard คำนวณใน `dashboard_summary(p_year, p_unit_id, p_owner_id)` (security invoker → RLS) ขอบเขต = งานที่ `tasks.year` = ปีที่เลือก / กราฟใช้ token `--chart-bar` (ผ่าน dataviz validator ทั้ง light/dark) และมี "ดูเป็นตาราง"
+- วันลา (FR-22, BR-40..44): ตาราง `leaves` RLS แบบเดียวกับ tasks / ห้ามซ้อนด้วย trigger `leaves_prevent_overlap` / นับวันทำการจันทร์–ศุกร์ (`src/lib/leave/rules.ts` ฝั่ง client, `leave_summary()` ฝั่ง SQL) / บันทึกทันทีผ่าน server action (ไม่ผูกกับปุ่มบันทึกของบอร์ด)
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
 ### Auth
@@ -124,3 +125,4 @@ docs/requirements.md     # สเปก
 - [x] M6 การบันทึก (FR-09, 10)
 - [x] M7 ส่วน Admin (FR-11, 18–20)
 - [x] M8 Dashboard (FR-13, 14, 16)
+- [x] วันลา (FR-22)

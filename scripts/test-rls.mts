@@ -60,6 +60,8 @@ async function cleanup(): Promise<void> {
   if (ids.length > 0) {
     const { data: tasks } = await service.from("tasks").select("id").in("owner_id", ids);
     const taskIds = (tasks ?? []).map((t: { id: string }) => t.id);
+    await service.from("leaves").delete().in("owner_id", ids);
+    await service.from("leaves").delete().in("created_by", ids);
     await service.from("task_history").delete().in("changed_by", ids);
     if (taskIds.length > 0) {
       await service.from("task_history").delete().in("task_id", taskIds);
@@ -227,6 +229,30 @@ async function main(): Promise<void> {
     const reorder = await c.rpc("reorder_categories", { p_ids: (cats.data ?? []).map((r) => r.id) });
     check("A cannot reorder categories (FR-18)", reorder.error !== null);
 
+    // BR-40..44 leaves
+    const ownLeave = await c
+      .from("leaves")
+      .insert({ owner_id: a.id, created_by: a.id, leave_type: "sick", start_date: "2026-11-23", end_date: "2026-11-24" })
+      .select("id");
+    check("A can record own leave", (ownLeave.data ?? []).length === 1, ownLeave.error?.message);
+    const overlap = await c
+      .from("leaves")
+      .insert({ owner_id: a.id, created_by: a.id, leave_type: "personal", start_date: "2026-11-24", end_date: "2026-11-25" });
+    check("A cannot record an overlapping leave", overlap.error !== null);
+    const forB = await c
+      .from("leaves")
+      .insert({ owner_id: b.id, created_by: a.id, leave_type: "sick", start_date: "2026-11-23", end_date: "2026-11-23" });
+    check("A cannot record leave for B", forB.error !== null);
+    const spoof = await c
+      .from("leaves")
+      .insert({ owner_id: a.id, created_by: b.id, leave_type: "sick", start_date: "2026-12-01", end_date: "2026-12-01" });
+    check("A cannot record leave as someone else", spoof.error !== null);
+    const leaveDel = await c.from("leaves").delete().eq("owner_id", a.id).select("id");
+    check("A cannot hard-delete leaves", leaveDel.error !== null || (leaveDel.data ?? []).length === 0);
+    const leaveSum = await c.rpc("leave_summary", { p_from: "2026-10-01", p_to: "2027-09-30", p_owner_id: a.id });
+    const sumRows = (leaveSum.data ?? []) as { total?: number }[];
+    check("leave_summary counts A's working days", leaveSum.error === null && sumRows[0]?.total === 2, leaveSum.error?.message);
+
     // BR-29 / BR-30 / BR-31
     // FR-16: the dashboard function runs as the caller, so B's tasks are not counted.
     const dash = await c.rpc("dashboard_summary", { p_year: YEAR, p_owner_id: b.id });
@@ -266,6 +292,14 @@ async function main(): Promise<void> {
 
     const profiles = await c.from("profiles").select("id").in("id", [a.id, b.id, admin.id]);
     check("admin reads all profiles", (profiles.data ?? []).length === 3, profiles.error?.message);
+
+    const adminLeave = await c
+      .from("leaves")
+      .insert({ owner_id: b.id, created_by: admin.id, leave_type: "official", start_date: "2026-11-23", end_date: "2026-11-23" })
+      .select("id");
+    check("admin can record leave for B", (adminLeave.data ?? []).length === 1, adminLeave.error?.message);
+    const readA = await c.from("leaves").select("id").eq("owner_id", a.id);
+    check("admin reads A's leaves", (readA.data ?? []).length === 1, readA.error?.message);
 
     const catUpd = await c.from("categories").update({ sort_order: 1 }).eq("id", category.id).select("id");
     check("admin can update categories", (catUpd.data ?? []).length === 1, catUpd.error?.message);

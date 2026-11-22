@@ -61,6 +61,61 @@ export type Database = {
         }
         Relationships: []
       }
+      leaves: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          is_deleted: boolean
+          leave_type: string
+          note: string | null
+          owner_id: string
+          start_date: string
+          updated_at: string
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          created_by?: string
+          end_date: string
+          id?: string
+          is_deleted?: boolean
+          leave_type: string
+          note?: string | null
+          owner_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          is_deleted?: boolean
+          leave_type?: string
+          note?: string | null
+          owner_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaves_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaves_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -261,6 +316,15 @@ export type Database = {
       }
       is_active_user: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      leave_summary: {
+        Args: {
+          p_from: string
+          p_owner_id?: string
+          p_to: string
+          p_unit_id?: string
+        }
+        Returns: Json
+      }
       reorder_categories: { Args: { p_ids: string[] }; Returns: undefined }
       save_board_changes: { Args: { p_changes: Json }; Returns: Json }
     }

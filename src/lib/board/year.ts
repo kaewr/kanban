@@ -62,3 +62,13 @@ export function fiscalRangeLabel(fiscalYear: number, startMonth: number): string
   if (startMonth <= 1) return `มกราคม – ธันวาคม ${fiscalYear}`;
   return `${THAI_MONTHS[startMonth - 1]} ${fiscalYear - 1} – ${THAI_MONTHS[startMonth - 2]} ${fiscalYear}`;
 }
+
+/** First and last Gregorian date (YYYY-MM-DD) of a board year (BR-10). */
+export function yearDateRange(year: number, yearType: YearType, fiscalStartMonth: number): { from: string; to: string } {
+  const gregorian = year - BE_OFFSET;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (yearType !== "fiscal" || fiscalStartMonth <= 1) return { from: `${gregorian}-01-01`, to: `${gregorian}-12-31` };
+  const lastMonth = fiscalStartMonth - 1;
+  const lastDay = new Date(Date.UTC(gregorian, lastMonth, 0)).getUTCDate();
+  return { from: `${gregorian - 1}-${pad(fiscalStartMonth)}-01`, to: `${gregorian}-${pad(lastMonth)}-${pad(lastDay)}` };
+}

@@ -1,5 +1,6 @@
 import {
   AlarmClockIcon,
+  CalendarOffIcon,
   CircleCheckBigIcon,
   HourglassIcon,
   LayoutDashboardIcon,
@@ -16,12 +17,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { requireProfile } from "@/lib/auth";
 import { BOARD_COLUMNS } from "@/lib/board/constants";
 import { loadBoardOwners } from "@/lib/board/load";
-import { currentBoardYear, parseYearParam, yearLabel, yearOptions } from "@/lib/board/year";
+import { currentBoardYear, parseYearParam, yearDateRange, yearLabel, yearOptions } from "@/lib/board/year";
 import { monthSeries, parseSummary, type DashboardSummary } from "@/lib/dashboard/summary";
+import { parseLeaveSummary } from "@/lib/leave/summary";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { CategoryDoneChart, MonthlyDoneChart } from "./charts";
 import { DashboardFilters } from "./dashboard-filters";
+import { LeaveTable } from "./leave-table";
 
 export const metadata = { title: "Dashboard | Kanban Board บันทึกงาน" };
 // Every page reads the session per request, so it cannot be an instant navigation.
@@ -168,6 +171,20 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   if (error) throw new Error("โหลดข้อมูล Dashboard ไม่สำเร็จ");
   const summary = parseSummary(data);
 
+  // BR-43: leave days in the same year range, same filters (RLS limits users to themselves).
+  const range = yearDateRange(year, yearType, fiscalStartMonth);
+  const leaveRes = await supabase.rpc("leave_summary", {
+    p_from: range.from,
+    p_to: range.to,
+    p_unit_id: unitId || undefined,
+    p_owner_id: isAdmin ? userId || undefined : profile.id,
+  });
+  if (leaveRes.error) throw new Error("โหลดข้อมูลวันลาไม่สำเร็จ");
+  const leavePeople = parseLeaveSummary(leaveRes.data);
+  const leaveTotal = leavePeople.reduce((n, p) => n + p.total, 0);
+  const thisMonthKey = summary.today.slice(0, 7);
+  const leaveThisMonth = leavePeople.reduce((n, p) => n + (p.months[thisMonthKey] ?? 0), 0);
+
   const months = monthSeries(year, yearType, fiscalStartMonth, summary.monthly);
   const lt = summary.longTerm;
 
@@ -296,6 +313,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       </div>
 
       {isAdmin && !userId && <PeopleTable summary={summary} />}
+      {isAdmin ? (
+        <LeaveTable people={leavePeople} months={months} />
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:max-w-xl">
+          <StatTile icon={CalendarOffIcon} label="วันลาปีนี้" value={`${leaveTotal} วัน`} hint="นับเฉพาะวันทำการ" testId="stat-leave-year" />
+          <StatTile icon={CalendarOffIcon} label="วันลาเดือนนี้" value={`${leaveThisMonth} วัน`} testId="stat-leave-month" />
+        </div>
+      )}
       {!isAdmin && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <ScanEyeIcon className="size-3.5" aria-hidden />

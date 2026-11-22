@@ -92,6 +92,7 @@ export async function deleteTestUser(userId: string): Promise<void> {
   await service().from("profiles").update({ role: "user" }).eq("id", userId);
   const { data: tasks } = await service().from("tasks").select("id").eq("owner_id", userId);
   const taskIds = (tasks ?? []).map((t) => t.id);
+  await service().from("leaves").delete().or(`owner_id.eq.${userId},created_by.eq.${userId}`);
   await service().from("task_history").delete().eq("changed_by", userId);
   if (taskIds.length > 0) {
     await service().from("task_history").delete().in("task_id", taskIds);
