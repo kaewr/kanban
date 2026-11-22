@@ -233,6 +233,17 @@ async function main(): Promise<void> {
     const restore = await c.rpc("admin_restore", { p_backup: { format: "kanban-backup", version: 1, data: {} } });
     check("A cannot call admin_restore", restore.error !== null);
 
+    // BR-47: clearing touches only the caller's own tasks
+    const cleared = await c.rpc("clear_my_tasks", { p_year: YEAR });
+    const bTask = await service.from("tasks").select("is_deleted").eq("id", taskB).single();
+    const aTask = await service.from("tasks").select("is_deleted").eq("id", taskA).single();
+    check(
+      "clear_my_tasks clears A's tasks only",
+      cleared.error === null && (cleared.data ?? 0) >= 1 && aTask.data?.is_deleted === true && bTask.data?.is_deleted === false,
+      cleared.error?.message,
+    );
+    must(await service.from("tasks").update({ is_deleted: false }).eq("owner_id", a.id).select("id"), "undo clear");
+
     // BR-40..44 leaves
     const ownLeave = await c
       .from("leaves")

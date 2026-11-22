@@ -33,6 +33,8 @@ export type BoardActions = {
   reloadTasks: (ids: string[], rows: BoardTask[]) => void;
   /** FR-10: put draft tasks back on top of the loaded board. */
   restoreDraft: (draft: BoardTask[]) => void;
+  /** BR-47: the year's tasks were cleared in the database; empty the board, drop unsaved work. */
+  clearAll: () => void;
 };
 
 export type BoardStore = BoardState & BoardActions;
@@ -204,6 +206,8 @@ export function createBoardStore(init: BoardInit) {
         return { tasks };
       });
     },
+
+    clearAll: () => set({ tasks: {}, snapshot: {} }),
   }));
 }
 

@@ -2,7 +2,8 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon, TriangleAlertIcon } from "lucide-react";
+import { ArrowUpIcon, ChevronDownIcon, ChevronUpIcon, PlusIcon, TriangleAlertIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { isTaskChanged } from "@/lib/board/changes";
 import { COLUMN_PAGE_SIZE } from "@/lib/board/filter";
@@ -55,9 +56,11 @@ export function BoardColumn({
   const partial = tasks.length !== totalCount;
   const style = STATUS_STYLE[status];
   const Icon = style.icon;
+  const { sectionRef, headerRef, count: aboveCount, scrollToTop } = useCardsAbove(tasks.length);
 
   return (
     <section
+      ref={sectionRef}
       aria-label={label}
       data-status={status}
       className={cn(
@@ -67,7 +70,7 @@ export function BoardColumn({
     >
       {/* Sticks under the board toolbar on large screens while the page scrolls. The opaque
           layer plus the same tint keeps the header looking like the column above the cards. */}
-      <header className="z-10 rounded-t-2xl bg-background lg:sticky lg:top-[6.5rem]">
+      <header ref={headerRef} className="z-10 rounded-t-2xl bg-background lg:sticky lg:top-[6.5rem]">
         <div className={cn("flex flex-col gap-1.5 rounded-t-2xl px-3 pt-3 pb-2", style.column, "ring-0")}>
           <div className="flex items-center justify-between gap-2">
             <h2
@@ -96,6 +99,21 @@ export function BoardColumn({
               <TriangleAlertIcon className="mt-px size-3.5 shrink-0" aria-hidden />
               มีงานกำลังทำเกิน {WIP_LIMIT} งาน ลองปิดงานที่ค้างก่อนเริ่มงานใหม่
             </p>
+          )}
+          {aboveCount > 0 && (
+            <button
+              type="button"
+              onClick={scrollToTop}
+              data-testid="cards-above"
+              className={cn(
+                "flex w-full items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
+                style.pill,
+                "hover:brightness-95",
+              )}
+            >
+              <ArrowUpIcon className="size-3.5" aria-hidden />
+              มี {aboveCount} งานด้านบน
+            </button>
           )}
           {/* BR-01: add in every column — at the top so it is always at hand */}
           <Button
@@ -168,4 +186,52 @@ export function BoardColumn({
       </div>
     </section>
   );
+}
+
+/**
+ * While the page scrolls, a long column can push a short one's cards above its sticky
+ * header so the short column looks empty. Counts those cards and scrolls back to them.
+ * Only on large screens, where the header sticks.
+ */
+function useCardsAbove(cardCount: number) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const wide = window.matchMedia("(min-width: 1024px)");
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const section = sectionRef.current;
+        const header = headerRef.current;
+        if (!section || !header || !wide.matches) return setCount(0);
+        const limit = header.getBoundingClientRect().bottom;
+        let n = 0;
+        for (const card of section.querySelectorAll("li[data-task-id]")) {
+          if (card.getBoundingClientRect().bottom <= limit) n++;
+        }
+        setCount(n);
+      });
+    };
+    measure();
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [cardCount]);
+
+  const scrollToTop = () => {
+    const section = sectionRef.current;
+    if (!section) return;
+    // 6.5rem = app header + sticky board toolbar
+    const offset = 6.5 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+    window.scrollTo({ top: section.getBoundingClientRect().top + window.scrollY - offset, behavior: "smooth" });
+  };
+
+  return { sectionRef, headerRef, count, scrollToTop };
 }

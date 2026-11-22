@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useBoardStore } from "@/stores/board-store-provider";
 import type { YearType } from "@/types/domain";
 import { BoardOwnerSelect } from "./board-owner-select";
+import { ClearBoardMenu } from "./clear-board-dialog";
 import { ConflictDialog } from "./conflict-dialog";
 import { useConfirmLeave } from "./unsaved-guard";
 import { useBoardSave } from "./use-board-save";
@@ -112,6 +113,8 @@ export function BoardToolbar({
           )}
           {saving ? "กำลังบันทึก…" : "บันทึก"}
         </Button>
+        {/* BR-47: only on your own board, never on someone else's */}
+        {!ownerParam && <ClearBoardMenu yearLabel={yearLabel(year, yearType)} />}
       </div>
 
       <ConflictDialog

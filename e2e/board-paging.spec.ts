@@ -75,7 +75,9 @@ test.describe("long columns", () => {
     await expect(cardByTitle(done, "ค้าง 01")).toBeVisible();
     await expect(done.getByTestId("task-title")).toHaveCount(10);
     await expect(cardByTitle(done, "เสร็จ 06")).toHaveCount(0);
-    // Dragging onto a long column works too.
+    // Dragging onto a long column works too (from the top, where the card is not under
+    // the sticky headers).
+    await page.evaluate(() => window.scrollTo(0, 0));
     await mouseDrag(page, cardByTitle(page, "ค้าง 02"), done);
     await expect(cardByTitle(done, "ค้าง 02")).toBeAttached();
     await expect(unsavedCount(page)).toHaveText("ยังไม่บันทึก 2 รายการ");

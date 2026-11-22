@@ -311,6 +311,7 @@ export type Database = {
     }
     Functions: {
       admin_restore: { Args: { p_backup: Json }; Returns: Json }
+      clear_my_tasks: { Args: { p_year: number }; Returns: number }
       dashboard_summary: {
         Args: { p_owner_id?: string; p_unit_id?: string; p_year: number }
         Returns: Json
