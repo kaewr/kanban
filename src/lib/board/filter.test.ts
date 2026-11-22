@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_FILTER, isFilterActive, latestDone, matchesFilter } from "./filter";
+import { EMPTY_FILTER, isFilterActive, matchesFilter, pageColumn } from "./filter";
 import { dueLabel, dueState } from "./rules";
 
 const today = "2026-11-22";
@@ -52,15 +52,23 @@ describe("matchesFilter (FR-14)", () => {
   });
 });
 
-describe("latestDone", () => {
-  const done = Array.from({ length: 5 }, (_, i) => ({
+describe("pageColumn", () => {
+  const tasks = Array.from({ length: 5 }, (_, i) => ({
     id: `t${i}`,
-    completedAt: `2026-11-0${i + 1}T00:00:00Z`, // t4 is the latest
+    completedAt: `2026-11-0${5 - i}T00:00:00Z`, // t0 finished last
   }));
 
-  it("keeps the latest by completion date in column order, plus unsaved ones", () => {
-    expect(latestDone(done, 2, () => false).map((t) => t.id)).toEqual(["t3", "t4"]);
-    expect(latestDone(done, 2, (t) => t.id === "t0").map((t) => t.id)).toEqual(["t0", "t3", "t4"]);
-    expect(latestDone(done, 10, () => false)).toHaveLength(5);
+  it("takes the first cards by position", () => {
+    expect(pageColumn(tasks, 2, "position", () => false).map((t) => t.id)).toEqual(["t0", "t1"]);
+  });
+
+  it("takes the most recently finished for the done column, in column order", () => {
+    const reversed = [...tasks].reverse(); // column order t4..t0
+    expect(pageColumn(reversed, 2, "latestDone", () => false).map((t) => t.id)).toEqual(["t1", "t0"]);
+  });
+
+  it("always shows touched cards and returns everything when under the limit", () => {
+    expect(pageColumn(tasks, 2, "position", (t) => t.id === "t4").map((t) => t.id)).toEqual(["t0", "t1", "t4"]);
+    expect(pageColumn(tasks, 10, "position", () => false)).toHaveLength(5);
   });
 });

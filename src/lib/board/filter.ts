@@ -34,24 +34,25 @@ export function matchesFilter(
   return true;
 }
 
-/** "เสร็จแล้ว" shows this many tasks until the user expands it. */
-export const DONE_PREVIEW_LIMIT = 10;
+/** Each column shows this many cards at first, then this many more per click. */
+export const COLUMN_PAGE_SIZE = 10;
 
 /**
- * The latest finished tasks (by completedAt), plus any task the user has touched and
- * not saved yet, kept in the column's own order (position).
+ * The cards a column shows: the first `limit` (by position, or for "เสร็จแล้ว" the most
+ * recently finished), plus any card the user has touched and not saved yet, so a moved
+ * card never disappears into the hidden part. Column order is kept.
  */
-export function latestDone<T extends Pick<BoardTask, "id" | "completedAt">>(
+export function pageColumn<T extends Pick<BoardTask, "id" | "completedAt">>(
   tasks: T[],
   limit: number,
+  pick: "position" | "latestDone",
   alwaysShow: (task: T) => boolean,
 ): T[] {
   if (tasks.length <= limit) return tasks;
-  const latest = new Set(
-    [...tasks]
-      .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))
-      .slice(0, limit)
-      .map((t) => t.id),
-  );
-  return tasks.filter((t) => latest.has(t.id) || alwaysShow(t));
+  const ordered =
+    pick === "latestDone"
+      ? [...tasks].sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))
+      : tasks;
+  const chosen = new Set(ordered.slice(0, limit).map((t) => t.id));
+  return tasks.filter((t) => chosen.has(t.id) || alwaysShow(t));
 }

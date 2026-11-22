@@ -6,7 +6,8 @@ export function column(page: Page, status: TaskStatus): Locator {
 }
 
 export function columnList(page: Page, status: TaskStatus): Locator {
-  return column(page, status).locator("ol");
+  // The drop area below the column header (cards + empty space).
+  return column(page, status).getByTestId("column-drop");
 }
 
 export function card(page: Page, id: string): Locator {

@@ -20,11 +20,11 @@ import { BOARD_COLUMNS, STATUS_LABEL } from "@/lib/board/constants";
 import { bangkokDate } from "@/lib/board/dates";
 import { isTaskChanged } from "@/lib/board/changes";
 import {
-  DONE_PREVIEW_LIMIT,
+  COLUMN_PAGE_SIZE,
   EMPTY_FILTER,
   isFilterActive,
-  latestDone,
   matchesFilter,
+  pageColumn,
   type BoardFilter,
 } from "@/lib/board/filter";
 import { positionBetween } from "@/lib/board/position";
@@ -57,7 +57,9 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
   const [dialog, setDialog] = useState<TaskDialogMode | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<BoardFilter>(EMPTY_FILTER);
-  const [doneExpanded, setDoneExpanded] = useState(false);
+  // Cards shown per column; grows by COLUMN_PAGE_SIZE per "แสดงเพิ่ม". Not remembered.
+  const [limits, setLimits] = useState<Partial<Record<TaskStatus, number>>>({});
+  const limitOf = (status: TaskStatus) => limits[status] ?? COLUMN_PAGE_SIZE;
   // Bangkok date for FR-13 highlights, fixed for the life of the page.
   const [today] = useState(() => bangkokDate(new Date()));
 
@@ -73,18 +75,20 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
     return result;
   }, [tasks, year]);
 
-  // FR-14: what is shown. Drag positions are still computed on the full columns.
-  // "เสร็จแล้ว" keeps only the latest tasks unless expanded or a filter is active.
+  // FR-14 filters show every match. Otherwise each column is paged: the first cards by
+  // position ("เสร็จแล้ว": most recently finished) plus unsaved ones. Drag positions are
+  // still computed on the full columns.
+  const filtering = isFilterActive(filter);
   const shownColumns = useMemo<Columns>(() => {
-    const result = Object.fromEntries(
-      TASK_STATUSES.map((s) => [s, columns[s].filter((t) => matchesFilter(t, filter, today))]),
+    const touched = (t: BoardTask) => t.isNew || isTaskChanged(t, snapshot[t.id]);
+    return Object.fromEntries(
+      TASK_STATUSES.map((s) => {
+        const matching = columns[s].filter((t) => matchesFilter(t, filter, today));
+        if (filtering) return [s, matching];
+        return [s, pageColumn(matching, limits[s] ?? COLUMN_PAGE_SIZE, s === "done" ? "latestDone" : "position", touched)];
+      }),
     ) as Columns;
-    if (!doneExpanded && !isFilterActive(filter)) {
-      result.done = latestDone(result.done, DONE_PREVIEW_LIMIT, (t) => t.isNew || isTaskChanged(t, snapshot[t.id]));
-    }
-    return result;
-  }, [columns, filter, today, doneExpanded, snapshot]);
-  const doneHidden = columns.done.length - shownColumns.done.length;
+  }, [columns, filter, filtering, today, limits, snapshot]);
   const total = TASK_STATUSES.reduce((n, s) => n + columns[s].length, 0);
   const shown = TASK_STATUSES.reduce((n, s) => n + shownColumns[s].length, 0);
 
@@ -124,7 +128,10 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
     if (!toStatus) return;
 
     const list = columns[toStatus].filter((t) => t.id !== task.id);
-    let index = list.length; // dropped on the column itself -> end
+    // Dropped on the column itself -> right after the last card the user can see
+    // (hidden cards further down stay below it).
+    const lastShown = shownColumns[toStatus].filter((t) => t.id !== task.id).at(-1);
+    let index = lastShown ? list.findIndex((t) => t.id === lastShown.id) + 1 : 0;
     if (overTask && overTask.id !== task.id) {
       index = list.findIndex((t) => t.id === overTask.id);
       const dragged = active.rect.current.translated;
@@ -174,7 +181,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
         </div>
 
         {/* Phones: one column per screen with snap scrolling; desktop: all five. */}
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:px-0">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:px-0 lg:overflow-visible">
           {BOARD_COLUMNS.map((column) => (
             <BoardColumn
               key={column.status}
@@ -190,10 +197,16 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
               onEdit={(id) => setDialog({ kind: "edit", taskId: id })}
               onDelete={setDeletingId}
               onMove={moveToColumn}
-              preview={
-                column.status === "done" && !isFilterActive(filter)
-                  ? { hidden: doneHidden, expanded: doneExpanded, onToggle: () => setDoneExpanded((v) => !v) }
-                  : undefined
+              paging={
+                filtering
+                  ? null
+                  : {
+                      hidden: columns[column.status].length - shownColumns[column.status].length,
+                      canCollapse: limitOf(column.status) > COLUMN_PAGE_SIZE,
+                      onMore: () =>
+                        setLimits((l) => ({ ...l, [column.status]: limitOf(column.status) + COLUMN_PAGE_SIZE })),
+                      onCollapse: () => setLimits((l) => ({ ...l, [column.status]: COLUMN_PAGE_SIZE })),
+                    }
               }
             />
           ))}
