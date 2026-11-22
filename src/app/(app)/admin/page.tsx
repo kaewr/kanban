@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 import { ROUTES } from "@/lib/routes";
 
 export const metadata = { title: "Admin | Kanban Board บันทึกงาน" };
+// Every page reads the session per request, so it cannot be an instant navigation.
+export const instant = false;
 
 const SECTIONS = [
   {

@@ -18,6 +18,8 @@ import { UnitFilter } from "./unit-filter";
 import { UserActions } from "./user-actions";
 
 export const metadata = { title: "จัดการผู้ใช้ | Kanban Board บันทึกงาน" };
+// Every page reads the session per request, so it cannot be an instant navigation.
+export const instant = false;
 
 const ROLE_LABEL = { admin: "ผู้ดูแลระบบ", user: "ผู้ใช้งาน" } as const;
 

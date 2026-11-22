@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CategoryManager } from "./category-manager";
 
 export const metadata = { title: "หมวดหมู่งาน | Kanban Board บันทึกงาน" };
+// Every page reads the session per request, so it cannot be an instant navigation.
+export const instant = false;
 
 export default async function AdminCategoriesPage() {
   await requireAdmin();

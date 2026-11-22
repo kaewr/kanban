@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { YearSettingsForm } from "./year-settings-form";
 
 export const metadata = { title: "ตั้งค่าปีงบประมาณ | Kanban Board บันทึกงาน" };
+// Every page reads the session per request, so it cannot be an instant navigation.
+export const instant = false;
 
 export default async function AdminSettingsPage() {
   await requireAdmin();

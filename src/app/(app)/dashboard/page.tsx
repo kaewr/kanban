@@ -24,6 +24,8 @@ import { CategoryDoneChart, MonthlyDoneChart } from "./charts";
 import { DashboardFilters } from "./dashboard-filters";
 
 export const metadata = { title: "Dashboard | Kanban Board บันทึกงาน" };
+// Every page reads the session per request, so it cannot be an instant navigation.
+export const instant = false;
 
 const days = (v: number | null) => (v === null ? "—" : `${v.toLocaleString("th-TH", { maximumFractionDigits: 1 })} วัน`);
 const percent = (v: number | null) => (v === null ? "—" : `${Math.round(v * 100)}%`);

@@ -4,6 +4,8 @@ import { requireProfile } from "@/lib/auth";
 import { loadBoard, loadBoardOwners } from "@/lib/board/load";
 
 export const metadata = { title: "บอร์ด | Kanban Board บันทึกงาน" };
+// Every page reads the session per request, so it cannot be an instant navigation.
+export const instant = false;
 
 export default async function BoardPage({ searchParams }: PageProps<"/board">) {
   const profile = await requireProfile();
