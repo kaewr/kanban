@@ -2,9 +2,16 @@
 import { randomBytes } from "node:crypto";
 import type { Page } from "@playwright/test";
 import { expect, formMessage, gotoReady, loginAs, test } from "./fixtures";
-import { categoriesInOrder, deleteTestCategories, E2E_CATEGORY_PREFIX } from "./support/tasks";
+import { categoriesInOrder, deleteCategoriesNamed, E2E_CATEGORY_PREFIX } from "./support/tasks";
 
-const uniqueName = (label: string) => `${E2E_CATEGORY_PREFIX}${label}_${randomBytes(3).toString("hex")}`;
+// Names this worker created (renamed ones included). afterAll runs per worker, so it
+// must not delete categories another worker is still using; global teardown sweeps the rest.
+const created: string[] = [];
+const uniqueName = (label: string) => {
+  const name = `${E2E_CATEGORY_PREFIX}${label}_${randomBytes(3).toString("hex")}`;
+  created.push(name);
+  return name;
+};
 const row = (page: Page, name: string) => page.locator(`li[data-category="${name}"]`);
 
 async function addCategory(page: Page, name: string) {
@@ -14,7 +21,7 @@ async function addCategory(page: Page, name: string) {
 }
 
 test.afterAll(async () => {
-  await deleteTestCategories();
+  await deleteCategoriesNamed(created);
 });
 
 test.describe("FR-18 categories", () => {

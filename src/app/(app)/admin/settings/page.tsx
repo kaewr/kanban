@@ -5,14 +5,14 @@ import { ROUTES } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 import { YearSettingsForm } from "./year-settings-form";
 
-export const metadata = { title: "ตั้งค่าปี | Kanban Board บันทึกงาน" };
+export const metadata = { title: "ตั้งค่าปีงบประมาณ | Kanban Board บันทึกงาน" };
 
 export default async function AdminSettingsPage() {
   await requireAdmin();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("app_settings")
-    .select("year_type, fiscal_start_month")
+    .select("fiscal_start_month")
     .maybeSingle();
   if (error || !data) throw new Error("โหลดการตั้งค่าไม่สำเร็จ");
 
@@ -25,13 +25,13 @@ export default async function AdminSettingsPage() {
         </Link>
         <h1 className="flex items-center gap-2 text-2xl font-semibold">
           <CalendarCogIcon className="size-6 text-primary" aria-hidden />
-          ตั้งค่ารูปแบบปี
+          ตั้งค่าปีงบประมาณ
         </h1>
+        <p className="text-sm text-muted-foreground">
+          เดือนเริ่มปีงบประมาณใช้ร่วมกันทั้งระบบ ส่วนการแสดงแบบปีงบประมาณหรือปี พ.ศ. ผู้ใช้แต่ละคนเลือกเองที่หน้าโปรไฟล์
+        </p>
       </div>
-      <YearSettingsForm
-        yearType={data.year_type === "fiscal" ? "fiscal" : "calendar"}
-        fiscalStartMonth={data.fiscal_start_month}
-      />
+      <YearSettingsForm fiscalStartMonth={data.fiscal_start_month} />
     </div>
   );
 }

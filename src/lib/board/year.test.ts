@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentBoardYear, parseYearParam, yearOptions } from "./year";
+import { currentBoardYear, fiscalRangeLabel, parseYearParam, yearOptions } from "./year";
 
 // Instants are given in UTC; the board uses Asia/Bangkok (UTC+7).
 const at = (iso: string) => new Date(iso);
@@ -42,5 +42,12 @@ describe("parseYearParam", () => {
     expect(parseYearParam("2026", 2569)).toBe(2569);
     expect(parseYearParam("abc", 2569)).toBe(2569);
     expect(parseYearParam(undefined, 2569)).toBe(2569);
+  });
+});
+
+describe("fiscalRangeLabel", () => {
+  it("names the months a fiscal year covers", () => {
+    expect(fiscalRangeLabel(2570, 10)).toBe("ตุลาคม 2569 – กันยายน 2570");
+    expect(fiscalRangeLabel(2570, 1)).toBe("มกราคม – ธันวาคม 2570");
   });
 });

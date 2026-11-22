@@ -1,12 +1,21 @@
-// FR-04: admin creates a user with a role. Password = DEFAULT_PASSWORD (BR-23),
+// FR-04: admin creates a user with a unit (BR-29), position (BR-30) and role.
+// The username is generated (people log in by picking their name, BR-20). Password = DEFAULT_PASSWORD (BR-23),
 // must_change_password = true (BR-24 -> warning banner).
 import { NextResponse } from "next/server";
 import { apiError, getDefaultPassword, readJsonObject, requireAdminApi } from "@/lib/admin/api";
-import { parseDisplayName, parseRole, parseUsername } from "@/lib/admin/users";
+import {
+  isNameTaken,
+  loadUnitIds,
+  NAME_TAKEN,
+  parseDisplayName,
+  parsePosition,
+  parseRole,
+  parseUnitId,
+} from "@/lib/admin/users";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { toAuthEmail } from "@/lib/username";
+import { generateUsername, toAuthEmail } from "@/lib/username";
 
-const USERNAME_TAKEN = "ชื่อผู้ใช้นี้มีอยู่แล้ว";
+const CREATE_FAILED = "สร้างผู้ใช้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
 
 export async function POST(request: Request) {
   const { response } = await requireAdminApi();
@@ -15,40 +24,34 @@ export async function POST(request: Request) {
   const body = await readJsonObject(request);
   if (!body) return apiError(400, "ข้อมูลไม่ถูกต้อง");
 
-  const username = parseUsername(body.username);
-  if (!username.ok) return apiError(400, username.error);
   const displayName = parseDisplayName(body.displayName);
   if (!displayName.ok) return apiError(400, displayName.error);
   const role = parseRole(body.role);
   if (!role.ok) return apiError(400, role.error);
+  const position = parsePosition(body.position);
+  if (!position.ok) return apiError(400, position.error);
 
   const supabase = createAdminClient();
+  const unitId = parseUnitId(body.unitId, await loadUnitIds(supabase));
+  if (!unitId.ok) return apiError(400, unitId.error);
 
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("username", username.value)
-    .maybeSingle();
-  if (existing) return apiError(409, USERNAME_TAKEN);
+  if (await isNameTaken(supabase, displayName.value)) return apiError(409, NAME_TAKEN);
 
+  const username = generateUsername();
   const created = await supabase.auth.admin.createUser({
-    email: toAuthEmail(username.value), // BR-21
+    email: toAuthEmail(username), // BR-21
     password: getDefaultPassword(),
     email_confirm: true,
   });
-  if (created.error || !created.data.user) {
-    const code = created.error?.code;
-    if (code === "email_exists" || code === "user_already_exists") {
-      return apiError(409, USERNAME_TAKEN);
-    }
-    return apiError(500, "สร้างผู้ใช้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
-  }
+  if (created.error || !created.data.user) return apiError(500, CREATE_FAILED);
 
   const userId = created.data.user.id;
   const { error: profileError } = await supabase.from("profiles").insert({
     id: userId,
-    username: username.value,
+    username,
     display_name: displayName.value,
+    unit_id: unitId.value,
+    position: position.value,
     role: role.value,
     must_change_password: true,
     is_active: true,
@@ -57,8 +60,7 @@ export async function POST(request: Request) {
   if (profileError) {
     // Do not leave an auth account without a profile.
     await supabase.auth.admin.deleteUser(userId);
-    if (profileError.code === "23505") return apiError(409, USERNAME_TAKEN);
-    return apiError(500, "สร้างผู้ใช้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    return apiError(500, CREATE_FAILED);
   }
 
   return NextResponse.json({ id: userId }, { status: 201 });

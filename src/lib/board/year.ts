@@ -41,3 +41,24 @@ export function parseYearParam(raw: unknown, fallback: number): number {
   const value = typeof raw === "string" ? Number(raw) : NaN;
   return Number.isInteger(value) && value >= MIN_YEAR && value <= MAX_YEAR ? value : fallback;
 }
+
+export const THAI_MONTHS = [
+  "มกราคม",
+  "กุมภาพันธ์",
+  "มีนาคม",
+  "เมษายน",
+  "พฤษภาคม",
+  "มิถุนายน",
+  "กรกฎาคม",
+  "สิงหาคม",
+  "กันยายน",
+  "ตุลาคม",
+  "พฤศจิกายน",
+  "ธันวาคม",
+] as const;
+
+/** e.g. fiscal 2570 starting in October -> "ตุลาคม 2569 – กันยายน 2570". */
+export function fiscalRangeLabel(fiscalYear: number, startMonth: number): string {
+  if (startMonth <= 1) return `มกราคม – ธันวาคม ${fiscalYear}`;
+  return `${THAI_MONTHS[startMonth - 1]} ${fiscalYear - 1} – ${THAI_MONTHS[startMonth - 2]} ${fiscalYear}`;
+}

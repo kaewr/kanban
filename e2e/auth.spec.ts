@@ -1,8 +1,8 @@
-// M3: FR-01, FR-02 (warning only since 2026-11-20), FR-03, BR-21..24, BR-26
+// M3: FR-01, FR-02 (warning only since 2026-11-20), FR-03, BR-20..24 (login by name since 2026-11-22), BR-26
 import { defaultPasswordBanner, expect, formMessage, gotoReady, login, loginAs, logout, test } from "./fixtures";
 import { defaultPassword, setActive } from "./support/users";
 
-const INVALID_CREDENTIALS = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+const INVALID_CREDENTIALS = "รหัสผ่านไม่ถูกต้อง";
 const INACTIVE = /ถูกปิดการใช้งาน/;
 const BOARD_URL = /\/board$/;
 
@@ -15,25 +15,36 @@ test.describe("FR-01 login", () => {
 
   test("wrong password shows a generic error", async ({ page, makeUser }) => {
     const user = await makeUser();
-    await login(page, user.username, "wrong-password");
+    await login(page, user.displayName, "wrong-password");
     await expect(formMessage(page)).toHaveText(INVALID_CREDENTIALS);
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("unknown or malformed username shows the same error", async ({ page }) => {
-    await login(page, "no_such_user_xyz", "whatever");
-    await expect(formMessage(page)).toHaveText(INVALID_CREDENTIALS);
-    await page.getByLabel("ชื่อผู้ใช้").fill("A!");
+  test("BR-20: active accounts are listed by unit; the internal username and email are never shown", async ({
+    page,
+    makeUser,
+  }) => {
+    const user = await makeUser({ position: "นักวิชาการศึกษา" });
+    const planner = await makeUser({ unitId: "planning" });
+    const inactive = await makeUser();
+    await setActive(inactive.id, false);
+
+    await gotoReady(page, "/login");
+    const select = page.getByLabel("ชื่อผู้ใช้");
+    await expect(select.locator('optgroup[label="งานวิชาการ"] option', { hasText: user.displayName })).toHaveCount(1);
+    await expect(select.locator('optgroup[label="งานแผนงาน"] option', { hasText: planner.displayName })).toHaveCount(1);
+    await expect(select.locator("option", { hasText: inactive.displayName })).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText(user.username);
+
+    // A name must be chosen (native required) before submitting.
     await page.getByLabel("รหัสผ่าน", { exact: true }).fill("whatever");
     await page.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
-    await expect(formMessage(page)).toHaveText(INVALID_CREDENTIALS);
-  });
+    await expect(page).toHaveURL(/\/login/);
 
-  test("username is case-insensitive and the internal email is never shown (BR-21/22)", async ({ page, makeUser }) => {
-    const user = await makeUser();
-    await loginAs(page, { username: `  ${user.username.toUpperCase()} `, password: user.password });
+    await loginAs(page, user);
     await expect(page.getByRole("link", { name: user.displayName })).toBeVisible();
     await expect(page.locator("body")).not.toContainText("@kanban.local");
+    await expect(page.locator("body")).not.toContainText(user.username);
   });
 
   test("returns to the originally requested page", async ({ page, makeUser }) => {
@@ -57,7 +68,7 @@ test.describe("FR-02 default-password warning", () => {
   test("default-password account can use the app but sees a warning until it changes the password", async ({ page, makeUser }) => {
     test.slow(); // many sequential round trips
     const user = await makeUser({ mustChangePassword: true });
-    await loginAs(page, { username: user.username, password: defaultPassword() });
+    await loginAs(page, { displayName: user.displayName, password: defaultPassword() });
 
     // Not blocked: every page opens, and each shows the warning banner.
     for (const path of ["/board", "/dashboard", "/profile"]) {
@@ -98,7 +109,7 @@ test.describe("FR-02 default-password warning", () => {
 
     await gotoReady(page, "/profile");
     await logout(page);
-    await loginAs(page, { username: user.username, password: "new-pass-1" });
+    await loginAs(page, { displayName: user.displayName, password: "new-pass-1" });
     await expect(defaultPasswordBanner(page)).toHaveCount(0);
   });
 
@@ -110,7 +121,7 @@ test.describe("FR-02 default-password warning", () => {
 
   test("old /change-password link goes to the profile page", async ({ page, makeUser }) => {
     const user = await makeUser({ mustChangePassword: true });
-    await loginAs(page, { username: user.username, password: defaultPassword() });
+    await loginAs(page, { displayName: user.displayName, password: defaultPassword() });
     await page.goto("/change-password");
     await expect(page).toHaveURL(/\/profile$/);
   });
@@ -146,7 +157,7 @@ test.describe("FR-03 change own password", () => {
 
     await gotoReady(page, "/profile");
     await logout(page);
-    await loginAs(page, { username: user.username, password: "changed-pass" });
+    await loginAs(page, { displayName: user.displayName, password: "changed-pass" });
   });
 });
 
@@ -175,8 +186,9 @@ test.describe("menu and roles", () => {
 test.describe("BR-26 inactive accounts", () => {
   test("inactive account cannot log in", async ({ page, makeUser }) => {
     const user = await makeUser();
+    await gotoReady(page, "/login"); // page loaded while the account was still active
     await setActive(user.id, false);
-    await login(page, user.username, user.password);
+    await login(page, user.displayName, user.password);
     await expect(formMessage(page)).toContainText(INACTIVE);
     await expect(page).toHaveURL(/\/login/);
   });

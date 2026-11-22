@@ -15,7 +15,6 @@ export type Database = {
           id: boolean
           updated_at: string
           updated_by: string | null
-          year_type: string
         }
         ComputedFields: never
         Insert: {
@@ -23,14 +22,12 @@ export type Database = {
           id?: boolean
           updated_at?: string
           updated_by?: string | null
-          year_type?: string
         }
         Update: {
           fiscal_start_month?: number
           id?: boolean
           updated_at?: string
           updated_by?: string | null
-          year_type?: string
         }
         Relationships: [
           {
@@ -71,8 +68,11 @@ export type Database = {
           id: string
           is_active: boolean
           must_change_password: boolean
+          position: string | null
           role: string
+          unit_id: string | null
           username: string
+          year_type: string
         }
         ComputedFields: never
         Insert: {
@@ -81,8 +81,11 @@ export type Database = {
           id: string
           is_active?: boolean
           must_change_password?: boolean
+          position?: string | null
           role?: string
+          unit_id?: string | null
           username: string
+          year_type?: string
         }
         Update: {
           created_at?: string
@@ -90,10 +93,21 @@ export type Database = {
           id?: string
           is_active?: boolean
           must_change_password?: boolean
+          position?: string | null
           role?: string
+          unit_id?: string | null
           username?: string
+          year_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_history: {
         Row: {
@@ -216,6 +230,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      units: {
+        Row: {
+          id: string
+          name: string
+          sort_order: number
+        }
+        ComputedFields: never
+        Insert: {
+          id: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
     }
     Views: {

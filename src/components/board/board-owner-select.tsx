@@ -37,7 +37,8 @@ export function BoardOwnerSelect({
       >
         {owners.map((o) => (
           <option key={o.id} value={o.id}>
-            {o.id === viewer.id ? `ฉัน (${o.displayName})` : `${o.displayName} (@${o.username})`}
+            {o.id === viewer.id ? `ฉัน (${o.displayName})` : o.displayName}
+            {o.id !== viewer.id && o.position ? ` · ${o.position}` : ""}
             {o.isActive === false ? " · ปิดใช้งาน" : ""}
           </option>
         ))}

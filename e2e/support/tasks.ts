@@ -21,14 +21,11 @@ export async function firstCategory(): Promise<{ id: string; name: string }> {
   return data;
 }
 
-/** Board year the app shows by default (BR-10, from app_settings). */
-export async function currentYear(): Promise<number> {
-  const { data, error } = await service().from("app_settings").select("year_type, fiscal_start_month").single();
+/** Board year a test user sees by default: test users keep the default fiscal year type (BR-31). */
+export async function currentYear(yearType: "fiscal" | "calendar" = "fiscal"): Promise<number> {
+  const { data, error } = await service().from("app_settings").select("fiscal_start_month").single();
   if (error) throw new Error(`currentYear: ${error.message}`);
-  return currentBoardYear({
-    yearType: data.year_type === "fiscal" ? "fiscal" : "calendar",
-    fiscalStartMonth: data.fiscal_start_month,
-  });
+  return currentBoardYear({ yearType, fiscalStartMonth: data.fiscal_start_month });
 }
 
 export type SeedTask = {
@@ -106,25 +103,26 @@ export async function categoriesInOrder() {
   return data;
 }
 
+export async function deleteCategoriesNamed(names: string[]): Promise<void> {
+  if (names.length > 0) await service().from("categories").delete().in("name", names);
+}
+
 /** Hard delete is fine here: the app never deletes categories, the service role can. */
 export async function deleteTestCategories(): Promise<void> {
   await service().from("categories").delete().like("name", `${E2E_CATEGORY_PREFIX}%`);
 }
 
-export async function yearSettings() {
-  const { data, error } = await service()
-    .from("app_settings")
-    .select("year_type, fiscal_start_month, updated_by")
-    .single();
-  if (error) throw new Error(`yearSettings: ${error.message}`);
+export async function fiscalSettings() {
+  const { data, error } = await service().from("app_settings").select("fiscal_start_month, updated_by").single();
+  if (error) throw new Error(`fiscalSettings: ${error.message}`);
   return data;
 }
 
 /** Also clears updated_by so the test admin can be deleted (FK on delete restrict). */
-export async function setYearSettings(yearType: string, fiscalStartMonth: number): Promise<void> {
+export async function setFiscalStartMonth(month: number): Promise<void> {
   const { error } = await service()
     .from("app_settings")
-    .update({ year_type: yearType, fiscal_start_month: fiscalStartMonth, updated_by: null })
+    .update({ fiscal_start_month: month, updated_by: null })
     .eq("id", true);
-  if (error) throw new Error(`setYearSettings: ${error.message}`);
+  if (error) throw new Error(`setFiscalStartMonth: ${error.message}`);
 }

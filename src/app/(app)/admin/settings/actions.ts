@@ -6,15 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export type SettingsActionResult = { ok: true } | { ok: false; error: string };
 
-/** FR-19 / BR-10. RLS (app_settings_update_admin) enforces the admin role. */
-export async function updateYearSettings(
-  yearType: string,
-  fiscalStartMonth: number,
-): Promise<SettingsActionResult> {
+/** FR-19 (changed 22 Nov 2026): the shared fiscal start month. RLS enforces the admin role. */
+export async function updateFiscalStartMonth(fiscalStartMonth: number): Promise<SettingsActionResult> {
   const admin = await requireAdmin();
-  if (yearType !== "calendar" && yearType !== "fiscal") {
-    return { ok: false, error: "รูปแบบปีไม่ถูกต้อง" };
-  }
   if (!Number.isInteger(fiscalStartMonth) || fiscalStartMonth < 1 || fiscalStartMonth > 12) {
     return { ok: false, error: "เดือนเริ่มปีงบประมาณไม่ถูกต้อง" };
   }
@@ -22,7 +16,7 @@ export async function updateYearSettings(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("app_settings")
-    .update({ year_type: yearType, fiscal_start_month: fiscalStartMonth, updated_by: admin.id })
+    .update({ fiscal_start_month: fiscalStartMonth, updated_by: admin.id })
     .eq("id", true)
     .select("id");
   if (error || data.length !== 1) {

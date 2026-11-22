@@ -34,7 +34,7 @@ test.describe("FR-11 admin edits another user's board", () => {
     await ownerSelect(page).selectOption(user.id);
     await expect(page).toHaveURL(new RegExp(`/board\\?user=${user.username}&year=\\d+$`));
     await expect(banner(page)).toContainText(user.displayName);
-    await expect(banner(page)).toContainText(`@${user.username}`);
+    await expect(banner(page)).toContainText("งานวิชาการ");
     await expect(cardByTitle(column(page, "review"), "รอตรวจของผู้ใช้")).toBeVisible();
     await expect(cardByTitle(page, "งานของแอดมิน")).toHaveCount(0);
 

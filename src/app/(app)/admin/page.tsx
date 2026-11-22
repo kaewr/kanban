@@ -11,7 +11,7 @@ const SECTIONS = [
     href: ROUTES.adminUsers,
     icon: UsersIcon,
     title: "จัดการผู้ใช้",
-    description: "เพิ่มผู้ใช้ กำหนดบทบาท รีเซ็ตรหัสผ่าน ปิด/เปิดการใช้งาน",
+    description: "เพิ่มผู้ใช้ กำหนดสังกัดงาน ตำแหน่ง บทบาท รีเซ็ตรหัสผ่าน ปิด/เปิดการใช้งาน",
   },
   {
     href: ROUTES.board,
@@ -28,8 +28,8 @@ const SECTIONS = [
   {
     href: ROUTES.adminSettings,
     icon: CalendarCogIcon,
-    title: "ตั้งค่ารูปแบบปี",
-    description: "ปีปฏิทิน หรือ ปีงบประมาณ และเดือนเริ่มปีงบ",
+    title: "ตั้งค่าปีงบประมาณ",
+    description: "เดือนเริ่มปีงบประมาณที่ใช้ร่วมกันทั้งระบบ",
   },
 ] as const;
 

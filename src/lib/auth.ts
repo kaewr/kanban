@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ROUTES } from "@/lib/routes";
-import type { UserRole } from "@/types/domain";
+import type { UserRole, YearType } from "@/types/domain";
 
 export type CurrentProfile = {
   id: string;
@@ -11,6 +11,11 @@ export type CurrentProfile = {
   displayName: string;
   role: UserRole;
   mustChangePassword: boolean;
+  unitId: string | null;
+  unitName: string | null;
+  position: string | null;
+  /** BR-31: the user's own choice of year (fiscal by default). */
+  yearType: YearType;
 };
 
 /**
@@ -25,7 +30,7 @@ export const getCurrentProfile = cache(async (): Promise<CurrentProfile | null> 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, role, must_change_password")
+    .select("id, username, display_name, role, must_change_password, unit_id, position, year_type, units(name)")
     .eq("id", userId)
     .maybeSingle();
   if (!profile) return null;
@@ -36,6 +41,10 @@ export const getCurrentProfile = cache(async (): Promise<CurrentProfile | null> 
     displayName: profile.display_name,
     role: profile.role === "admin" ? "admin" : "user",
     mustChangePassword: profile.must_change_password,
+    unitId: profile.unit_id,
+    unitName: profile.units?.name ?? null,
+    position: profile.position,
+    yearType: profile.year_type === "calendar" ? "calendar" : "fiscal",
   };
 });
 

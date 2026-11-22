@@ -3,17 +3,18 @@
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { loginUsernameFor } from "@/lib/accounts";
 import { getCurrentProfile } from "@/lib/auth";
 import { getSupabasePublicEnv } from "@/lib/env";
 import { passwordUpdateErrorMessage, validateNewPassword } from "@/lib/password";
 import { ROUTES, safeNextPath } from "@/lib/routes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { isValidUsername, normalizeUsername, toAuthEmail } from "@/lib/username";
+import { toAuthEmail } from "@/lib/username";
 
 export type FormState = { error?: string; success?: string };
 
-const INVALID_CREDENTIALS = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"; // FR-01
+const INVALID_CREDENTIALS = "รหัสผ่านไม่ถูกต้อง"; // FR-01 (name is picked from a list, BR-20)
 const ACCOUNT_INACTIVE = "บัญชีนี้ถูกปิดการใช้งาน กรุณาติดต่อผู้ดูแลระบบ";
 
 function field(formData: FormData, name: string): string {
@@ -24,16 +25,19 @@ function field(formData: FormData, name: string): string {
 // ---------------------------------------------------------------------------
 // FR-01 Login
 // ---------------------------------------------------------------------------
-export type LoginState = FormState & { username?: string };
+export type LoginState = FormState & { userId?: string };
 
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  const username = normalizeUsername(formData.get("username"));
+  // BR-20: the user picks their name from the list; the internal username is looked up here.
+  const userId = field(formData, "userId");
   const password = field(formData, "password");
   const next = safeNextPath(formData.get("next"));
 
-  if (!isValidUsername(username) || password.length === 0) {
-    return { error: INVALID_CREDENTIALS, username };
-  }
+  if (userId.length === 0) return { error: "กรุณาเลือกชื่อผู้ใช้", userId };
+  if (password.length === 0) return { error: INVALID_CREDENTIALS, userId };
+
+  const username = await loginUsernameFor(userId);
+  if (!username) return { error: ACCOUNT_INACTIVE, userId };
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -44,12 +48,12 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   if (error || !data.user) {
     if (error?.code === "user_banned") {
       // Deactivated accounts are banned in Supabase Auth (BR-26, M4).
-      return { error: ACCOUNT_INACTIVE, username };
+      return { error: ACCOUNT_INACTIVE, userId };
     }
     if (error?.code === "over_request_rate_limit") {
-      return { error: "พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่", username };
+      return { error: "พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่", userId };
     }
-    return { error: INVALID_CREDENTIALS, username };
+    return { error: INVALID_CREDENTIALS, userId };
   }
 
   // RLS hides the profile of an inactive account (BR-26).
@@ -61,7 +65,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
 
   if (!profile) {
     await supabase.auth.signOut({ scope: "local" });
-    return { error: ACCOUNT_INACTIVE, username };
+    return { error: ACCOUNT_INACTIVE, userId };
   }
 
   // Default-password accounts are not blocked; the app shows a warning banner (FR-02).

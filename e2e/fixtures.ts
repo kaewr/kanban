@@ -2,8 +2,8 @@ import { test as base, expect, type Locator, type Page } from "@playwright/test"
 import {
   createTestUser,
   deleteTestUser,
-  deleteTestUserByUsername,
-  randomTestUsername,
+  deleteTestUsersByDisplayName,
+  randomTestDisplayName,
   type TestUser,
   type TestUserOptions,
 } from "./support/users";
@@ -11,8 +11,8 @@ import {
 type Fixtures = {
   /** Creates a throwaway account; deleted automatically after the test. */
   makeUser: (opts?: TestUserOptions) => Promise<TestUser>;
-  /** A fresh e2e_* username for accounts created through the UI; deleted after the test. */
-  newUsername: () => string;
+  /** A fresh unique name (contains "e2e_") for accounts created through the UI; deleted after the test. */
+  newDisplayName: () => string;
 };
 
 export const test = base.extend<Fixtures>({
@@ -27,15 +27,15 @@ export const test = base.extend<Fixtures>({
       await deleteTestUser(user.id);
     }
   },
-  newUsername: async ({}, use) => {
+  newDisplayName: async ({}, use) => {
     const names: string[] = [];
     await use(() => {
-      const name = randomTestUsername();
+      const name = randomTestDisplayName();
       names.push(name);
       return name;
     });
     for (const name of names) {
-      await deleteTestUserByUsername(name);
+      await deleteTestUsersByDisplayName(name);
     }
   },
 });
@@ -47,13 +47,13 @@ async function waitForHydration(page: Page): Promise<void> {
   await page.waitForLoadState("networkidle");
 }
 
-/** Submits the login form. Does not wait for the outcome (use for failure cases). */
-export async function login(page: Page, username: string, password: string): Promise<void> {
+/** Picks the name from the list and submits (BR-20). Does not wait for the outcome. */
+export async function login(page: Page, displayName: string, password: string): Promise<void> {
   if (!page.url().includes("/login")) {
     await page.goto("/login");
   }
   await waitForHydration(page);
-  await page.getByLabel("ชื่อผู้ใช้").fill(username);
+  await page.getByLabel("ชื่อผู้ใช้").selectOption({ label: displayName });
   await page.getByLabel("รหัสผ่าน", { exact: true }).fill(password);
   await page.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
 }
@@ -61,10 +61,10 @@ export async function login(page: Page, username: string, password: string): Pro
 /** Logs in and waits until the app has navigated away from /login. */
 export async function loginAs(
   page: Page,
-  user: { username: string; password: string },
+  user: { displayName: string; password: string },
   expected: RegExp = /\/board$/,
 ): Promise<void> {
-  await login(page, user.username, user.password);
+  await login(page, user.displayName, user.password);
   await expect(page).toHaveURL(expected, { timeout: 20_000 });
   await waitForHydration(page);
 }

@@ -1,4 +1,4 @@
-// FR-04 (role), FR-06 (activate / deactivate), display name.
+// FR-04 (role), FR-06 (activate / deactivate), name, unit (BR-29), position (BR-30).
 // BR-27: an admin cannot demote or deactivate themselves; the DB trigger also keeps
 // at least one active admin.
 import { NextResponse } from "next/server";
@@ -9,7 +9,16 @@ import {
   readJsonObject,
   requireAdminApi,
 } from "@/lib/admin/api";
-import { parseDisplayName, parseRole, profileUpdateErrorMessage } from "@/lib/admin/users";
+import {
+  isNameTaken,
+  loadUnitIds,
+  NAME_TAKEN,
+  parseDisplayName,
+  parsePosition,
+  parseRole,
+  parseUnitId,
+  profileUpdateErrorMessage,
+} from "@/lib/admin/users";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -36,6 +45,11 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/adm
     if (!role.ok) return apiError(400, role.error);
     update.role = role.value;
   }
+  if (body.position !== undefined) {
+    const position = parsePosition(body.position);
+    if (!position.ok) return apiError(400, position.error);
+    update.position = position.value;
+  }
   if (body.isActive !== undefined) {
     if (typeof body.isActive !== "boolean") return apiError(400, "ข้อมูลไม่ถูกต้อง");
     update.is_active = body.isActive;
@@ -47,6 +61,15 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/adm
   }
 
   const supabase = createAdminClient();
+  if (update.display_name && (await isNameTaken(supabase, update.display_name, id))) {
+    return apiError(409, NAME_TAKEN);
+  }
+  if (body.unitId !== undefined) {
+    const unitId = parseUnitId(body.unitId, await loadUnitIds(supabase));
+    if (!unitId.ok) return apiError(400, unitId.error);
+    update.unit_id = unitId.value;
+  }
+
   const { data: target } = await supabase
     .from("profiles")
     .select("id, is_active")

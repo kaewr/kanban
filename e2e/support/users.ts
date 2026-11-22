@@ -30,6 +30,11 @@ export function randomTestUsername(): string {
   return `${E2E_PREFIX}${randomBytes(5).toString("hex")}`;
 }
 
+/** Unique display name for accounts created through the UI (cleaned up by name). */
+export function randomTestDisplayName(): string {
+  return `ทดสอบ ${E2E_PREFIX}${randomBytes(5).toString("hex")}`;
+}
+
 export type TestUser = {
   id: string;
   username: string;
@@ -39,6 +44,8 @@ export type TestUser = {
 
 export type TestUserOptions = {
   role?: "user" | "admin";
+  unitId?: string | null;
+  position?: string | null;
   /** true = fresh account on DEFAULT_PASSWORD, forced to change it (FR-02). */
   mustChangePassword?: boolean;
 };
@@ -64,6 +71,8 @@ export async function createTestUser(opts: TestUserOptions = {}): Promise<TestUs
     display_name: displayName,
     role,
     must_change_password: mustChange,
+    unit_id: opts.unitId === undefined ? "academic" : opts.unitId,
+    position: opts.position ?? null,
   });
   if (inserted.error) throw new Error(`insert profile ${username}: ${inserted.error.message}`);
 
@@ -91,7 +100,7 @@ export async function deleteTestUser(userId: string): Promise<void> {
   await service().auth.admin.deleteUser(userId);
 }
 
-/** Removes every e2e_* account (leftovers from crashed runs). */
+/** Removes every test account (leftovers from crashed runs): e2e_* usernames and e2e_ names. */
 export async function deleteAllTestUsers(): Promise<void> {
   const { data } = await service().auth.admin.listUsers({ perPage: 1000 });
   for (const user of data?.users ?? []) {
@@ -99,17 +108,29 @@ export async function deleteAllTestUsers(): Promise<void> {
       await deleteTestUser(user.id);
     }
   }
+  const { data: named } = await service().from("profiles").select("id").like("display_name", `%${E2E_PREFIX}%`);
+  for (const p of named ?? []) await deleteTestUser(p.id);
 }
 
-export async function deleteTestUserByUsername(username: string): Promise<void> {
-  const { data } = await service().from("profiles").select("id").eq("username", username).maybeSingle();
-  if (data) await deleteTestUser(data.id);
+export async function deleteTestUsersByDisplayName(displayName: string): Promise<void> {
+  const { data } = await service().from("profiles").select("id").eq("display_name", displayName);
+  for (const p of data ?? []) await deleteTestUser(p.id);
+}
+
+export async function getProfileByName(displayName: string) {
+  const { data, error } = await service()
+    .from("profiles")
+    .select("id, username, display_name, role, is_active, must_change_password, unit_id, position, year_type")
+    .eq("display_name", displayName)
+    .maybeSingle();
+  if (error) throw new Error(`getProfileByName: ${error.message}`);
+  return data;
 }
 
 export async function getProfile(username: string) {
   const { data, error } = await service()
     .from("profiles")
-    .select("id, username, display_name, role, is_active, must_change_password")
+    .select("id, username, display_name, role, is_active, must_change_password, unit_id, position, year_type")
     .eq("username", username)
     .maybeSingle();
   if (error) throw new Error(`getProfile: ${error.message}`);

@@ -14,7 +14,11 @@ export function ForeignBoardBanner({ owner, year }: { owner: BoardOwner; year: n
       <EyeIcon className="size-4 shrink-0 text-primary" aria-hidden />
       <p className="min-w-0 flex-1">
         กำลังแก้บอร์ดของ <span className="font-semibold">{owner.displayName}</span>{" "}
-        <span className="font-mono text-xs">(@{owner.username})</span>
+        {(owner.position || owner.unitName) && (
+          <span className="text-muted-foreground">
+            ({[owner.position, owner.unitName].filter(Boolean).join(" · ")})
+          </span>
+        )}
         {owner.isActive === false && " · บัญชีนี้ปิดใช้งานแล้ว"} — การเปลี่ยนแปลงจะบันทึกในชื่อของคุณ
       </p>
       <Link

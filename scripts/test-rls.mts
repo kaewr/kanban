@@ -218,14 +218,24 @@ async function main(): Promise<void> {
     const catIns = await c.from("categories").insert({ name: "rls_test_category" });
     check("A cannot create categories", catIns.error !== null);
 
-    const settings = await c.from("app_settings").select("year_type");
+    const settings = await c.from("app_settings").select("fiscal_start_month");
     check("A can read app_settings", (settings.data ?? []).length === 1, settings.error?.message);
 
-    const setUpd = await c.from("app_settings").update({ year_type: "fiscal" }).eq("id", true).select("id");
+    const setUpd = await c.from("app_settings").update({ fiscal_start_month: 1 }).eq("id", true).select("id");
     check("A cannot update app_settings", setUpd.error !== null || (setUpd.data ?? []).length === 0);
 
     const reorder = await c.rpc("reorder_categories", { p_ids: (cats.data ?? []).map((r) => r.id) });
     check("A cannot reorder categories (FR-18)", reorder.error !== null);
+
+    // BR-29 / BR-30 / BR-31
+    const units = await c.from("units").select("id");
+    check("A can read units", (units.data ?? []).length === 4, units.error?.message);
+    const unitIns = await c.from("units").insert({ id: "rls_test", name: "rls_test_unit" });
+    check("A cannot create units", unitIns.error !== null);
+    const posUpd = await c.from("profiles").update({ position: "หัวหน้า" }).eq("id", a.id).select("id");
+    check("A cannot change own position", posUpd.error !== null || (posUpd.data ?? []).length === 0);
+    const yearUpd = await c.from("profiles").update({ year_type: "calendar" }).eq("id", a.id).select("id");
+    check("A cannot update own profile directly (server action only)", yearUpd.error !== null || (yearUpd.data ?? []).length === 0);
   }
 
   // ------------------------------------------------------------------ admin

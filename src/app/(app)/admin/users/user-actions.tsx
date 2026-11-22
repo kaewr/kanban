@@ -4,17 +4,17 @@ import { Button } from "@/components/ui/button";
 import { callAdminApi } from "@/lib/admin/client";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { EditUserDialog } from "./edit-user-dialog";
-import type { AdminUserRow } from "./types";
+import type { AdminUserRow, UnitOption } from "./types";
 
 /** Row actions: edit (FR-04), reset password (FR-05), activate/deactivate (FR-06). */
-export function UserActions({ user, isSelf }: { user: AdminUserRow; isSelf: boolean }) {
+export function UserActions({ user, isSelf, units }: { user: AdminUserRow; isSelf: boolean; units: UnitOption[] }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <EditUserDialog user={user} isSelf={isSelf} />
+      <EditUserDialog user={user} isSelf={isSelf} units={units} />
 
       {!isSelf && (
         <ConfirmActionDialog
-          trigger={<Button variant="outline" size="sm" aria-label={`รีเซ็ตรหัสผ่าน ${user.username}`} />}
+          trigger={<Button variant="outline" size="sm" aria-label={`รีเซ็ตรหัสผ่าน ${user.displayName}`} />}
           triggerLabel="รีเซ็ตรหัสผ่าน"
           title={`รีเซ็ตรหัสผ่านของ ${user.displayName}`}
           description="รหัสผ่านจะกลับเป็นรหัสผ่านเริ่มต้น ผู้ใช้จะเห็นแถบเตือนให้เปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบ"
@@ -27,7 +27,7 @@ export function UserActions({ user, isSelf }: { user: AdminUserRow; isSelf: bool
       {!isSelf &&
         (user.isActive ? (
           <ConfirmActionDialog
-            trigger={<Button variant="destructive" size="sm" aria-label={`ปิดการใช้งาน ${user.username}`} />}
+            trigger={<Button variant="destructive" size="sm" aria-label={`ปิดการใช้งาน ${user.displayName}`} />}
             triggerLabel="ปิดการใช้งาน"
             title={`ปิดการใช้งาน ${user.displayName}`}
             description="ผู้ใช้จะเข้าสู่ระบบไม่ได้ และถ้ากำลังใช้งานอยู่จะถูกออกจากระบบในคำขอถัดไป ข้อมูลงานยังอยู่ครบ เปิดใช้งานใหม่ได้ภายหลัง"
@@ -37,7 +37,7 @@ export function UserActions({ user, isSelf }: { user: AdminUserRow; isSelf: bool
           />
         ) : (
           <ConfirmActionDialog
-            trigger={<Button variant="outline" size="sm" aria-label={`เปิดการใช้งาน ${user.username}`} />}
+            trigger={<Button variant="outline" size="sm" aria-label={`เปิดการใช้งาน ${user.displayName}`} />}
             triggerLabel="เปิดการใช้งาน"
             title={`เปิดการใช้งาน ${user.displayName}`}
             description="ผู้ใช้จะเข้าสู่ระบบด้วยรหัสผ่านเดิมได้อีกครั้ง"

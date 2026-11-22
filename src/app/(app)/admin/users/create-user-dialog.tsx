@@ -15,13 +15,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
 import { callAdminApi } from "@/lib/admin/client";
+import type { UnitOption } from "./types";
+import { UserFields } from "./user-fields";
 
-/** FR-04: create a user with a role. */
-export function CreateUserDialog() {
+/** FR-04: create a user with unit, position and role. The username is generated. */
+export function CreateUserDialog({ units }: { units: UnitOption[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -33,8 +32,9 @@ export function CreateUserDialog() {
     setPending(true);
     setError(undefined);
     const result = await callAdminApi("/api/admin/users", "POST", {
-      username: form.get("username"),
       displayName: form.get("displayName"),
+      unitId: form.get("unitId"),
+      position: form.get("position"),
       role: form.get("role"),
     });
     setPending(false);
@@ -69,33 +69,7 @@ export function CreateUserDialog() {
 
           <FormMessage error={error} />
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="new-username">ชื่อผู้ใช้</Label>
-            <Input
-              id="new-username"
-              name="username"
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              pattern="[A-Za-z0-9._]{3,30}"
-              title="a-z 0-9 . _ ยาว 3–30 ตัวอักษร"
-              required
-            />
-            <p className="text-xs text-muted-foreground">a-z 0-9 . _ ยาว 3–30 ตัวอักษร แก้ภายหลังไม่ได้</p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="new-display-name">ชื่อที่แสดง</Label>
-            <Input id="new-display-name" name="displayName" maxLength={100} required />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="new-role">บทบาท</Label>
-            <NativeSelect id="new-role" name="role" defaultValue="user">
-              <option value="user">ผู้ใช้งาน</option>
-              <option value="admin">ผู้ดูแลระบบ</option>
-            </NativeSelect>
-          </div>
+          <UserFields idPrefix="new" units={units} />
 
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>ยกเลิก</DialogClose>

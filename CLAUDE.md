@@ -23,7 +23,8 @@ npm run test:e2e     # Playwright (build + start ให้เอง)
 # Supabase local (dev) — ต้องเปิด Docker Desktop ก่อน / พอร์ต 553xx (Studio http://127.0.0.1:55323)
 npm run db:start                    # เปิด stack local (ครั้งแรกรัน migrations ให้เอง)
 npm run db:stop
-npm run db:reset                    # ล้าง local + รัน migrations ใหม่ + สร้าง admin
+npm run db:reset                    # ล้าง local + รัน migrations ใหม่ + สร้าง admin + ผู้ใช้งานวิชาการ 7 คน
+npm run db:seed-users               # เพิ่มผู้ใช้งานวิชาการ (รันซ้ำได้) / :prod เมื่อผู้ใช้สั่งเท่านั้น
 npm run db:types                    # gen types จาก local
 npx supabase migration new <name>   # สร้างไฟล์ migration
 
@@ -90,7 +91,8 @@ docs/requirements.md     # สเปก
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
 ### Auth
-- username → `<username>@kanban.local` ก่อนเรียก Supabase Auth (BR-21) ไม่แสดงอีเมลนี้ใน UI
+- Login = เลือกชื่อจาก dropdown (BR-20) — รายชื่อโหลดด้วย service role ใน `src/lib/accounts.ts` (เฉพาะ id + ชื่อ + สังกัด ของบัญชีที่ใช้งานอยู่) / username สร้างอัตโนมัติ `generateUsername()` → `<username>@kanban.local` (BR-21) ไม่แสดงใน UI / ชื่อ-นามสกุลของบัญชีที่ใช้งานอยู่ห้ามซ้ำ (`isNameTaken`)
+- สังกัดงาน `units` ตายตัว 4 งาน (BR-29) / ตำแหน่ง admin แก้เท่านั้น (BR-30) / ผู้ใช้แก้ชื่อ + `year_type` ของตัวเองผ่าน `updateOwnProfile` (BR-31) / บอร์ดใช้ `year_type` ของเจ้าของบอร์ด
 - `must_change_password = true` → **ไม่บล็อก** แสดงแถบเตือน `DefaultPasswordBanner` ทุกหน้าจนกว่าจะเปลี่ยนรหัสที่ `/profile` (FR-02 แก้ไข 20 พ.ย. 2026)
 - proxy (`src/proxy.ts`) ตรวจแค่ login แล้วหรือยัง และบัญชีถูกปิดหรือไม่
 - หน้าและ Server Action ต้องเรียก `requireProfile()` / `requireAdmin()` จาก `src/lib/auth.ts` เสมอ ไม่พึ่ง proxy อย่างเดียว

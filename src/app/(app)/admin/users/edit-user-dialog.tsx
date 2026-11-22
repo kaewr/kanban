@@ -13,14 +13,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
 import { callAdminApi } from "@/lib/admin/client";
-import type { AdminUserRow } from "./types";
+import type { AdminUserRow, UnitOption } from "./types";
+import { UserFields } from "./user-fields";
 
-/** Edit display name and role (role locked on your own account, BR-27). */
-export function EditUserDialog({ user, isSelf }: { user: AdminUserRow; isSelf: boolean }) {
+/** Edit name, unit, position and role (role locked on your own account, BR-27). */
+export function EditUserDialog({ user, isSelf, units }: { user: AdminUserRow; isSelf: boolean; units: UnitOption[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -29,7 +27,11 @@ export function EditUserDialog({ user, isSelf }: { user: AdminUserRow; isSelf: b
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const body: Record<string, unknown> = { displayName: form.get("displayName") };
+    const body: Record<string, unknown> = {
+      displayName: form.get("displayName"),
+      unitId: form.get("unitId"),
+      position: form.get("position"),
+    };
     if (!isSelf) body.role = form.get("role");
 
     setPending(true);
@@ -54,30 +56,23 @@ export function EditUserDialog({ user, isSelf }: { user: AdminUserRow; isSelf: b
         if (next) setError(undefined);
       }}
     >
-      <DialogTrigger render={<Button variant="outline" size="sm" aria-label={`แก้ไข ${user.username}`} />}>
+      <DialogTrigger render={<Button variant="outline" size="sm" aria-label={`แก้ไข ${user.displayName}`} />}>
         แก้ไข
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>แก้ไขผู้ใช้ {user.username}</DialogTitle>
+            <DialogTitle>แก้ไขผู้ใช้ {user.displayName}</DialogTitle>
           </DialogHeader>
 
           <FormMessage error={error} />
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${idPrefix}-name`}>ชื่อที่แสดง</Label>
-            <Input id={`${idPrefix}-name`} name="displayName" defaultValue={user.displayName} maxLength={100} required />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${idPrefix}-role`}>บทบาท</Label>
-            <NativeSelect id={`${idPrefix}-role`} name="role" defaultValue={user.role} disabled={isSelf}>
-              <option value="user">ผู้ใช้งาน</option>
-              <option value="admin">ผู้ดูแลระบบ</option>
-            </NativeSelect>
-            {isSelf && <p className="text-xs text-muted-foreground">เปลี่ยนบทบาทของตัวเองไม่ได้</p>}
-          </div>
+          <UserFields
+            idPrefix={idPrefix}
+            units={units}
+            defaults={{ displayName: user.displayName, unitId: user.unitId, position: user.position, role: user.role }}
+            roleLocked={isSelf}
+          />
 
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>ยกเลิก</DialogClose>
