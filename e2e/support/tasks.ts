@@ -89,3 +89,42 @@ export async function editElsewhere(taskId: string, title: string): Promise<void
   const res = await service().from("tasks").update({ title, version: data.version + 1 }).eq("id", taskId);
   if (res.error) throw new Error(`editElsewhere: ${res.error.message}`);
 }
+
+// ---------------------------------------------------------------------------
+// Categories / settings (M7). Tests only touch e2e_* categories so parallel
+// board tests keep their seed categories.
+// ---------------------------------------------------------------------------
+export const E2E_CATEGORY_PREFIX = "e2e_";
+
+export async function categoriesInOrder() {
+  const { data, error } = await service()
+    .from("categories")
+    .select("id, name, sort_order, is_active")
+    .order("sort_order")
+    .order("name");
+  if (error) throw new Error(`categoriesInOrder: ${error.message}`);
+  return data;
+}
+
+/** Hard delete is fine here: the app never deletes categories, the service role can. */
+export async function deleteTestCategories(): Promise<void> {
+  await service().from("categories").delete().like("name", `${E2E_CATEGORY_PREFIX}%`);
+}
+
+export async function yearSettings() {
+  const { data, error } = await service()
+    .from("app_settings")
+    .select("year_type, fiscal_start_month, updated_by")
+    .single();
+  if (error) throw new Error(`yearSettings: ${error.message}`);
+  return data;
+}
+
+/** Also clears updated_by so the test admin can be deleted (FK on delete restrict). */
+export async function setYearSettings(yearType: string, fiscalStartMonth: number): Promise<void> {
+  const { error } = await service()
+    .from("app_settings")
+    .update({ year_type: yearType, fiscal_start_month: fiscalStartMonth, updated_by: null })
+    .eq("id", true);
+  if (error) throw new Error(`setYearSettings: ${error.message}`);
+}

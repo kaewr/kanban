@@ -1,14 +1,35 @@
+import { notFound } from "next/navigation";
 import { Board } from "@/components/board/board";
 import { requireProfile } from "@/lib/auth";
-import { loadBoard } from "@/lib/board/load";
+import { loadBoard, loadBoardOwners } from "@/lib/board/load";
 
 export const metadata = { title: "บอร์ด | Kanban Board บันทึกงาน" };
 
 export default async function BoardPage({ searchParams }: PageProps<"/board">) {
   const profile = await requireProfile();
-  const { year } = await searchParams;
-  const data = await loadBoard(profile.id, year);
+  const { year, user } = await searchParams;
+  const isAdmin = profile.role === "admin";
 
-  // key: a different year mounts a fresh board store.
-  return <Board key={data.year} ownerId={profile.id} data={data} />;
+  // FR-11: only admins may open another user's board; ?user= is ignored for everyone else.
+  const owners = isAdmin ? await loadBoardOwners() : [];
+  let owner = { id: profile.id, username: profile.username, displayName: profile.displayName };
+  if (isAdmin && typeof user === "string" && user !== profile.username) {
+    const found = owners.find((o) => o.username === user);
+    if (!found) notFound();
+    owner = found;
+  }
+
+  const data = await loadBoard(owner.id, year);
+
+  // key: a different owner or year mounts a fresh board store.
+  return (
+    <Board
+      key={`${owner.id}:${data.year}`}
+      ownerId={owner.id}
+      data={data}
+      viewer={{ id: profile.id, username: profile.username }}
+      owner={owner}
+      owners={owners}
+    />
+  );
 }

@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.18"
-  }
   public: {
     Tables: {
       app_settings: {
@@ -22,6 +17,7 @@ export type Database = {
           updated_by: string | null
           year_type: string
         }
+        ComputedFields: never
         Insert: {
           fiscal_start_month?: number
           id?: boolean
@@ -53,6 +49,7 @@ export type Database = {
           name: string
           sort_order: number
         }
+        ComputedFields: never
         Insert: {
           id?: string
           is_active?: boolean
@@ -77,6 +74,7 @@ export type Database = {
           role: string
           username: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           display_name: string
@@ -106,6 +104,7 @@ export type Database = {
           task_id: string
           to_status: string
         }
+        ComputedFields: never
         Insert: {
           changed_at?: string
           changed_by: string
@@ -160,6 +159,7 @@ export type Database = {
           version: number
           year: number
         }
+        ComputedFields: never
         Insert: {
           carried_from_year?: number | null
           category_id: string
@@ -222,8 +222,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_active_user: { Args: never; Returns: boolean }
-      is_admin: { Args: never; Returns: boolean }
+      is_active_user: { Args: Record<PropertyKey, never>; Returns: boolean }
+      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      reorder_categories: { Args: { p_ids: string[] }; Returns: undefined }
       save_board_changes: { Args: { p_changes: Json }; Returns: Json }
     }
     Enums: {
@@ -270,8 +271,7 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -295,8 +295,7 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -320,8 +319,7 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }

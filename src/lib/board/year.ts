@@ -27,6 +27,10 @@ export function currentBoardYear(settings: YearSettings, now: Date = new Date())
   return year;
 }
 
+export function yearLabel(year: number, yearType: YearType): string {
+  return yearType === "fiscal" ? `ปีงบประมาณ ${year}` : `พ.ศ. ${year}`;
+}
+
 /** FR-12 options: current year ±1 plus every year that has tasks, newest first. */
 export function yearOptions(current: number, taskYears: readonly number[]): number[] {
   const set = new Set<number>([current - 1, current, current + 1, ...taskYears]);

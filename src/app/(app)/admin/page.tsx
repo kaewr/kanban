@@ -11,7 +11,21 @@ const SECTIONS = [
     title: "จัดการผู้ใช้",
     description: "เพิ่มผู้ใช้ กำหนดบทบาท รีเซ็ตรหัสผ่าน ปิด/เปิดการใช้งาน",
   },
-  // M7: boards of other users (FR-11), categories (FR-18), year settings (FR-19)
+  {
+    href: ROUTES.board,
+    title: "บอร์ดของผู้ใช้",
+    description: "เลือก \"บอร์ดของ\" ที่หน้าบอร์ดเพื่อดูและแก้งานของผู้ใช้แต่ละคน",
+  },
+  {
+    href: ROUTES.adminCategories,
+    title: "หมวดหมู่งาน",
+    description: "เพิ่ม แก้ชื่อ เรียงลำดับ ปิด/เปิดใช้งานหมวดหมู่",
+  },
+  {
+    href: ROUTES.adminSettings,
+    title: "ตั้งค่ารูปแบบปี",
+    description: "ปีปฏิทิน หรือ ปีงบประมาณ และเดือนเริ่มปีงบ",
+  },
 ] as const;
 
 export default async function AdminPage() {

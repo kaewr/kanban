@@ -223,6 +223,9 @@ async function main(): Promise<void> {
 
     const setUpd = await c.from("app_settings").update({ year_type: "fiscal" }).eq("id", true).select("id");
     check("A cannot update app_settings", setUpd.error !== null || (setUpd.data ?? []).length === 0);
+
+    const reorder = await c.rpc("reorder_categories", { p_ids: (cats.data ?? []).map((r) => r.id) });
+    check("A cannot reorder categories (FR-18)", reorder.error !== null);
   }
 
   // ------------------------------------------------------------------ admin
@@ -250,6 +253,21 @@ async function main(): Promise<void> {
 
     const setUpd = await c.from("app_settings").update({ fiscal_start_month: 10 }).eq("id", true).select("id");
     check("admin can update app_settings", (setUpd.data ?? []).length === 1, setUpd.error?.message);
+
+    // FR-18: reorder needs the full list; reversing twice restores the original order.
+    const ordered = must(await c.from("categories").select("id").order("sort_order").order("name"), "read order");
+    const ids = ordered.map((r) => r.id);
+    const partial = await c.rpc("reorder_categories", { p_ids: ids.slice(1) });
+    check("admin reorder rejects an incomplete list", partial.error !== null);
+    const reversed = await c.rpc("reorder_categories", { p_ids: [...ids].reverse() });
+    const after = must(await c.from("categories").select("id").order("sort_order"), "read order");
+    check(
+      "admin can reorder categories",
+      reversed.error === null && after[0]?.id === ids[ids.length - 1],
+      reversed.error?.message,
+    );
+    const restore = await c.rpc("reorder_categories", { p_ids: ids });
+    if (restore.error) throw new Error(`restore order: ${restore.error.message}`);
   }
 
   // ------------------------------------------------------------------ inactive

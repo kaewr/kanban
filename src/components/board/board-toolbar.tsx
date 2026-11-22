@@ -5,17 +5,34 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { changedTasks } from "@/lib/board/changes";
+import type { BoardOwner } from "@/lib/board/load";
+import { yearLabel } from "@/lib/board/year";
+import { boardHref } from "@/lib/routes";
 import { useBoardStore } from "@/stores/board-store-provider";
 import type { YearType } from "@/types/domain";
+import { BoardOwnerSelect } from "./board-owner-select";
 import { ConflictDialog } from "./conflict-dialog";
 import { useConfirmLeave } from "./unsaved-guard";
 import { useBoardSave } from "./use-board-save";
 
-function yearLabel(year: number, yearType: YearType): string {
-  return yearType === "fiscal" ? `ปีงบประมาณ ${year}` : `พ.ศ. ${year}`;
-}
-
-export function BoardToolbar({ year, years, yearType }: { year: number; years: number[]; yearType: YearType }) {
+export function BoardToolbar({
+  year,
+  years,
+  yearType,
+  ownerParam,
+  owners,
+  viewer,
+  ownerId,
+}: {
+  year: number;
+  years: number[];
+  yearType: YearType;
+  /** username in the URL when an admin is on someone else's board */
+  ownerParam: string | undefined;
+  owners: BoardOwner[];
+  viewer: { id: string; username: string };
+  ownerId: string;
+}) {
   const router = useRouter();
   const confirmLeave = useConfirmLeave();
   const tasks = useBoardStore((s) => s.tasks);
@@ -33,6 +50,8 @@ export function BoardToolbar({ year, years, yearType }: { year: number; years: n
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <h1 className="text-2xl font-semibold">บอร์ด</h1>
 
+      {owners.length > 0 && <BoardOwnerSelect owners={owners} viewer={viewer} ownerId={ownerId} year={year} />}
+
       {/* FR-12; FR-10 asks first when there are unsaved changes */}
       <label className="flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">ปี</span>
@@ -41,7 +60,7 @@ export function BoardToolbar({ year, years, yearType }: { year: number; years: n
           className="w-auto"
           value={year}
           onChange={(e) => {
-            const target = `/board?year=${e.target.value}`;
+            const target = boardHref({ user: ownerParam, year: Number(e.target.value) });
             confirmLeave(() => router.push(target));
           }}
         >

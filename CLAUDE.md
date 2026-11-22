@@ -85,6 +85,8 @@ docs/requirements.md     # สเปก
 - เก็บ `moved_at` ทุกครั้งที่งานเปลี่ยนคอลัมน์ และใช้ค่านี้ใน `task_history.changed_at`
 - กติกา `started_at` / `completed_at` ตาม BR-01, BR-03, BR-04 (client ใช้ใน store, server บังคับซ้ำใน `save_board_changes`)
 - เมื่อชน: ไม่เขียนอะไรเลย → ผู้ใช้โหลดเฉพาะงานที่ชนใหม่ การเปลี่ยนแปลงอื่นยังอยู่
+- Admin เปิดบอร์ดคนอื่นที่ `/board?user=<username>` (FR-11) — server ตรวจ role ก่อนใช้ `?user=` (user ทั่วไปถูกเพิกเฉย) + แถบ `ForeignBoardBanner` (BR-28) / ลิงก์บอร์ดสร้างด้วย `boardHref()`
+- หมวดหมู่ (FR-18) และตั้งค่าปี (FR-19) แก้ผ่าน Server Action ด้วย session ของ admin (RLS บังคับ) ไม่ใช้ service role / เรียงลำดับผ่าน `reorder_categories(p_ids)` / เปลี่ยนรูปแบบปีไม่คำนวณ `tasks.year` ของงานเดิมใหม่
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
 ### Auth
@@ -115,5 +117,5 @@ docs/requirements.md     # สเปก
 - [x] M4 จัดการผู้ใช้ (FR-04–06)
 - [x] M5 บอร์ด (FR-07, 08, 12)
 - [x] M6 การบันทึก (FR-09, 10)
-- [ ] M7 ส่วน Admin (FR-11, 18–20)
+- [x] M7 ส่วน Admin (FR-11, 18–20)
 - [ ] M8 Dashboard (FR-13, 14, 16)

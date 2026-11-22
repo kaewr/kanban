@@ -13,6 +13,20 @@ export type BoardData = {
   categories: BoardCategory[];
 };
 
+export type BoardOwner = { id: string; username: string; displayName: string; isActive?: boolean };
+
+/** FR-11: every account an admin can open, active first. RLS returns only the caller's row for non-admins. */
+export async function loadBoardOwners(): Promise<BoardOwner[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, username, display_name, is_active")
+    .order("is_active", { ascending: false })
+    .order("display_name");
+  if (error) throw new Error("โหลดรายชื่อผู้ใช้ไม่สำเร็จ");
+  return data.map((p) => ({ id: p.id, username: p.username, displayName: p.display_name, isActive: p.is_active }));
+}
+
 /** Loads one owner's board for a year (FR-07, FR-12). Reads go through RLS. */
 export async function loadBoard(ownerId: string, yearParam: unknown): Promise<BoardData> {
   const supabase = await createClient();
