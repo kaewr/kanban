@@ -2,7 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { PlusIcon, TriangleAlertIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, PlusIcon, TriangleAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isTaskChanged } from "@/lib/board/changes";
 import { WIP_LIMIT } from "@/lib/board/constants";
@@ -30,6 +30,8 @@ type Props = {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onMove: (id: string, to: TaskStatus) => void;
+  /** "เสร็จแล้ว" shows only the latest tasks until expanded. */
+  preview?: { hidden: number; expanded: boolean; onToggle: () => void };
 };
 
 export function BoardColumn({
@@ -45,6 +47,7 @@ export function BoardColumn({
   onEdit,
   onDelete,
   onMove,
+  preview,
 }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: `${COLUMN_ID_PREFIX}${status}` });
   const wip = status === "in_progress" && exceedsWipLimit(totalCount); // BR-08
@@ -57,7 +60,8 @@ export function BoardColumn({
       aria-label={label}
       data-status={status}
       className={cn(
-        "flex w-[85vw] max-w-sm shrink-0 snap-center flex-col rounded-2xl md:w-auto md:max-w-none md:min-w-52 md:flex-1",
+        // Fits the screen; the card list scrolls inside so the header and "+ เพิ่มงาน" stay visible.
+        "flex max-h-[max(24rem,calc(100dvh-14rem))] w-[85vw] max-w-sm shrink-0 snap-center flex-col rounded-2xl md:w-auto md:max-w-none md:min-w-52 md:flex-1",
         style.column,
       )}
     >
@@ -91,7 +95,7 @@ export function BoardColumn({
         <ol
           ref={setNodeRef}
           className={cn(
-            "flex min-h-24 flex-1 flex-col gap-2 rounded-lg px-2 pb-2 transition-colors",
+            "flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-lg px-2 pt-0.5 pb-2 transition-colors",
             isOver && cn("bg-background/40 ring-2", style.dropRing),
           )}
         >
@@ -111,7 +115,28 @@ export function BoardColumn({
       </SortableContext>
 
       {/* BR-01: add at the bottom of every column */}
-      <div className="px-2 pb-2">
+      <div className="flex flex-col gap-1 px-2 pb-2">
+        {preview && (preview.hidden > 0 || preview.expanded) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full gap-1 text-muted-foreground hover:bg-background/70 hover:text-foreground"
+            onClick={preview.onToggle}
+            data-testid="done-preview-toggle"
+          >
+            {preview.expanded ? (
+              <>
+                <ChevronUpIcon aria-hidden />
+                แสดงเฉพาะงานล่าสุด
+              </>
+            ) : (
+              <>
+                <ChevronDownIcon aria-hidden />
+                แสดงทั้งหมด ({totalCount})
+              </>
+            )}
+          </Button>
+        )}
         <Button
           variant="ghost"
           className="w-full justify-start gap-1.5 text-muted-foreground hover:bg-background/70 hover:text-foreground"

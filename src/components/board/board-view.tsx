@@ -18,7 +18,15 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useMemo, useState } from "react";
 import { BOARD_COLUMNS, STATUS_LABEL } from "@/lib/board/constants";
 import { bangkokDate } from "@/lib/board/dates";
-import { EMPTY_FILTER, matchesFilter, type BoardFilter } from "@/lib/board/filter";
+import { isTaskChanged } from "@/lib/board/changes";
+import {
+  DONE_PREVIEW_LIMIT,
+  EMPTY_FILTER,
+  isFilterActive,
+  latestDone,
+  matchesFilter,
+  type BoardFilter,
+} from "@/lib/board/filter";
 import { positionBetween } from "@/lib/board/position";
 import { dueState } from "@/lib/board/rules";
 import type { BoardCategory, BoardTask } from "@/lib/board/types";
@@ -49,6 +57,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
   const [dialog, setDialog] = useState<TaskDialogMode | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<BoardFilter>(EMPTY_FILTER);
+  const [doneExpanded, setDoneExpanded] = useState(false);
   // Bangkok date for FR-13 highlights, fixed for the life of the page.
   const [today] = useState(() => bangkokDate(new Date()));
 
@@ -65,13 +74,17 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
   }, [tasks, year]);
 
   // FR-14: what is shown. Drag positions are still computed on the full columns.
-  const shownColumns = useMemo<Columns>(
-    () =>
-      Object.fromEntries(
-        TASK_STATUSES.map((s) => [s, columns[s].filter((t) => matchesFilter(t, filter, today))]),
-      ) as Columns,
-    [columns, filter, today],
-  );
+  // "เสร็จแล้ว" keeps only the latest tasks unless expanded or a filter is active.
+  const shownColumns = useMemo<Columns>(() => {
+    const result = Object.fromEntries(
+      TASK_STATUSES.map((s) => [s, columns[s].filter((t) => matchesFilter(t, filter, today))]),
+    ) as Columns;
+    if (!doneExpanded && !isFilterActive(filter)) {
+      result.done = latestDone(result.done, DONE_PREVIEW_LIMIT, (t) => t.isNew || isTaskChanged(t, snapshot[t.id]));
+    }
+    return result;
+  }, [columns, filter, today, doneExpanded, snapshot]);
+  const doneHidden = columns.done.length - shownColumns.done.length;
   const total = TASK_STATUSES.reduce((n, s) => n + columns[s].length, 0);
   const shown = TASK_STATUSES.reduce((n, s) => n + shownColumns[s].length, 0);
 
@@ -177,6 +190,11 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
               onEdit={(id) => setDialog({ kind: "edit", taskId: id })}
               onDelete={setDeletingId}
               onMove={moveToColumn}
+              preview={
+                column.status === "done" && !isFilterActive(filter)
+                  ? { hidden: doneHidden, expanded: doneExpanded, onToggle: () => setDoneExpanded((v) => !v) }
+                  : undefined
+              }
             />
           ))}
         </div>

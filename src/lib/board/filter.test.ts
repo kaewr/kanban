@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_FILTER, isFilterActive, matchesFilter } from "./filter";
+import { EMPTY_FILTER, isFilterActive, latestDone, matchesFilter } from "./filter";
 import { dueLabel, dueState } from "./rules";
 
 const today = "2026-11-22";
@@ -49,5 +49,18 @@ describe("matchesFilter (FR-14)", () => {
     expect(matchesFilter(task, { ...EMPTY_FILTER, due: "overdue" }, today)).toBe(true);
     expect(matchesFilter(task, { ...EMPTY_FILTER, due: "soon" }, today)).toBe(false);
     expect(isFilterActive({ ...EMPTY_FILTER, due: "soon" })).toBe(true);
+  });
+});
+
+describe("latestDone", () => {
+  const done = Array.from({ length: 5 }, (_, i) => ({
+    id: `t${i}`,
+    completedAt: `2026-11-0${i + 1}T00:00:00Z`, // t4 is the latest
+  }));
+
+  it("keeps the latest by completion date in column order, plus unsaved ones", () => {
+    expect(latestDone(done, 2, () => false).map((t) => t.id)).toEqual(["t3", "t4"]);
+    expect(latestDone(done, 2, (t) => t.id === "t0").map((t) => t.id)).toEqual(["t0", "t3", "t4"]);
+    expect(latestDone(done, 10, () => false)).toHaveLength(5);
   });
 });

@@ -68,7 +68,7 @@ export function TaskCardContent({ task, categoryName, unsaved, due = null, class
   return (
     <div
       className={cn(
-        "flex flex-col gap-2.5 rounded-xl bg-card p-3 text-sm shadow-xs ring-1 ring-foreground/8 transition-[box-shadow,transform] duration-150",
+        "relative flex flex-col gap-2.5 rounded-xl bg-card p-3 text-sm shadow-xs ring-1 ring-foreground/8 transition-[box-shadow,transform] duration-150",
         dueStyle?.card,
         className,
       )}

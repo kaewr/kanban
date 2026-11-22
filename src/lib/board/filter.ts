@@ -33,3 +33,25 @@ export function matchesFilter(
   if (filter.due !== "all" && dueState(task, today)?.kind !== filter.due) return false;
   return true;
 }
+
+/** "เสร็จแล้ว" shows this many tasks until the user expands it. */
+export const DONE_PREVIEW_LIMIT = 10;
+
+/**
+ * The latest finished tasks (by completedAt), plus any task the user has touched and
+ * not saved yet, kept in the column's own order (position).
+ */
+export function latestDone<T extends Pick<BoardTask, "id" | "completedAt">>(
+  tasks: T[],
+  limit: number,
+  alwaysShow: (task: T) => boolean,
+): T[] {
+  if (tasks.length <= limit) return tasks;
+  const latest = new Set(
+    [...tasks]
+      .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))
+      .slice(0, limit)
+      .map((t) => t.id),
+  );
+  return tasks.filter((t) => latest.has(t.id) || alwaysShow(t));
+}
