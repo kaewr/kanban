@@ -19,8 +19,17 @@ npm run build        # ตรวจ build ก่อน push
 npm run lint
 npm test             # Vitest unit test (src/**/*.test.ts) — รันใน PowerShell/cmd (Git Bash ทำให้ Vitest โหลดซ้ำ)
 npm run test:e2e     # Playwright (build + start ให้เอง)
+
+# Supabase local (dev) — ต้องเปิด Docker Desktop ก่อน / พอร์ต 553xx (Studio http://127.0.0.1:55323)
+npm run db:start                    # เปิด stack local (ครั้งแรกรัน migrations ให้เอง)
+npm run db:stop
+npm run db:reset                    # ล้าง local + รัน migrations ใหม่ + สร้าง admin
+npm run db:types                    # gen types จาก local
 npx supabase migration new <name>   # สร้างไฟล์ migration
-npx supabase db push                # ใช้กับ dev ก่อนเสมอ
+
+# Production (Supabase cloud ที่ link ไว้)
+npm run db:push:prod                # push migration ขึ้น prod — ทดสอบด้วย db:reset + test บน local ก่อนเสมอ
+npm run db:create-admin:prod        # สร้าง admin บน prod (ใช้ .env.prod)
 ```
 
 ## Structure (เป้าหมาย)
@@ -40,7 +49,14 @@ docs/requirements.md     # สเปก
 
 ## Environment variables
 
-`.env.local` (ห้าม commit) — ดูตัวอย่างใน `.env.example`
+ห้าม commit ไฟล์ `.env*` (ยกเว้น `.env.example`)
+
+- `.env.local` → Supabase **local** (ค่าจาก `npx supabase status`) ใช้กับ `npm run dev`, e2e, test-rls
+- `.env.prod` → Supabase **cloud (production)** ใช้กับสคริปต์ `*:prod` เท่านั้น / บน Vercel ตั้งค่าใน dashboard
+- ห้ามตั้งชื่อ `.env.production.local` — `next build` จะโหลดเอง ทำให้ e2e ยิง prod
+- e2e และ test-rls ไม่ยอมรันถ้า URL ไม่ใช่ local (`scripts/require-local.mts`, `playwright.config.ts`)
+
+ตัวแปร:
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (publishable key `sb_publishable_...`)
 - `SUPABASE_SERVICE_ROLE_KEY` — server เท่านั้น (secret key `sb_secret_...` หรือ legacy service_role)

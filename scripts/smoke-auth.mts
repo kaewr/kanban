@@ -7,6 +7,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
+import { assertLocalSupabase } from "./require-local.mts";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -18,6 +19,7 @@ function requireEnv(name: string): string {
 }
 
 const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
+assertLocalSupabase(url);
 const publishableKey = requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";

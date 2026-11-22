@@ -1,4 +1,4 @@
-// RLS test against the linked Supabase project.
+// RLS test against the local Supabase stack (npm run db:start).
 // Creates temporary users rls_test_a, rls_test_b (user) and rls_test_admin (admin),
 // signs in as each with the publishable key, checks access rules, then cleans up.
 // Requires the real admin to exist first (npm run db:create-admin) because of BR-27.
@@ -6,6 +6,7 @@
 // Usage: npm run db:test-rls
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
+import { assertLocalSupabase } from "./require-local.mts";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -17,6 +18,7 @@ function requireEnv(name: string): string {
 }
 
 const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
+assertLocalSupabase(url);
 const publishableKey = requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 
