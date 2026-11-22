@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppNav, type NavItem } from "@/components/app-nav";
 import { BrandMark } from "@/components/brand-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { requireProfile } from "@/lib/auth";
 import { ROUTES } from "@/lib/routes";
 
@@ -42,9 +43,10 @@ export async function AppHeader() {
   return (
     <Shell>
       <AppNav items={items} />
+      <ThemeToggle className="ml-auto" />
       <Link
         href={ROUTES.profile}
-        className="ml-auto flex min-w-0 items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm transition-colors hover:bg-muted"
+        className="flex min-w-0 items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm transition-colors hover:bg-muted"
         title="โปรไฟล์"
       >
         <span

@@ -93,6 +93,7 @@
 }
 
 .dark {
+  color-scheme: dark; /* native selects, date pickers and scrollbars follow */
   --brand-purple: #b57ee5;
   --brand-gold: #d9a93d;
   --brand-gold-soft: #3a2e12;

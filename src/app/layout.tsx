@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, IBM_Plex_Sans_Thai, Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const plexThai = IBM_Plex_Sans_Thai({
@@ -25,11 +26,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // next-themes sets the class on <html> before hydration.
     <html
       lang="th"
+      suppressHydrationWarning
       className={`${inter.variable} ${plexThai.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

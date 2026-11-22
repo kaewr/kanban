@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BrandMark } from "@/components/brand-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** Centered card used by /login. */
@@ -19,6 +20,7 @@ export function AuthCard({
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_50%_-10%,color-mix(in_oklab,var(--brand-purple)_18%,transparent),transparent),radial-gradient(40rem_20rem_at_90%_110%,color-mix(in_oklab,var(--brand-gold)_14%,transparent),transparent)]"
       />
+      <ThemeToggle className="absolute top-4 right-4" />
       <div className="relative flex w-full max-w-sm flex-col items-center gap-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <BrandMark className="size-12 rounded-xl" />
