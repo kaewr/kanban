@@ -229,6 +229,10 @@ async function main(): Promise<void> {
     const reorder = await c.rpc("reorder_categories", { p_ids: (cats.data ?? []).map((r) => r.id) });
     check("A cannot reorder categories (FR-18)", reorder.error !== null);
 
+    // BR-46: restore runs only on the server with the service role
+    const restore = await c.rpc("admin_restore", { p_backup: { format: "kanban-backup", version: 1, data: {} } });
+    check("A cannot call admin_restore", restore.error !== null);
+
     // BR-40..44 leaves
     const ownLeave = await c
       .from("leaves")

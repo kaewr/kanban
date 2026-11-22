@@ -8,6 +8,7 @@ export const ROUTES = {
   adminUsers: "/admin/users",
   adminCategories: "/admin/categories",
   adminSettings: "/admin/settings",
+  adminBackup: "/admin/backup",
   profile: "/profile",
 } as const;
 

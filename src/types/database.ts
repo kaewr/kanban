@@ -310,6 +310,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_restore: { Args: { p_backup: Json }; Returns: Json }
       dashboard_summary: {
         Args: { p_owner_id?: string; p_unit_id?: string; p_year: number }
         Returns: Json

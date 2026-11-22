@@ -91,6 +91,7 @@ docs/requirements.md     # สเปก
 - FR-13 ไฮไลต์: `dueState()` ใน `src/lib/board/rules.ts` (เกินกำหนด = แดง, วันนี้ถึง +3 วัน = ส้ม, งานเสร็จไม่ไฮไลต์) / FR-14 ตัวกรองบนบอร์ดอยู่ใน state ของ `BoardView` เท่านั้น (ไม่บันทึก ล้างเมื่อ refresh) ตำแหน่งตอนลากคำนวณจากคอลัมน์เต็ม
 - FR-16 Dashboard คำนวณใน `dashboard_summary(p_year, p_unit_id, p_owner_id)` (security invoker → RLS) ขอบเขต = งานที่ `tasks.year` = ปีที่เลือก / กราฟใช้ token `--chart-bar` (ผ่าน dataviz validator ทั้ง light/dark) และมี "ดูเป็นตาราง"
 - วันลา (FR-22, BR-40..44): ตาราง `leaves` RLS แบบเดียวกับ tasks / ห้ามซ้อนด้วย trigger `leaves_prevent_overlap` / นับวันทำการจันทร์–ศุกร์ (`src/lib/leave/rules.ts` ฝั่ง client, `leave_summary()` ฝั่ง SQL) / บันทึกทันทีผ่าน server action (ไม่ผูกกับปุ่มบันทึกของบอร์ด)
+- Backup/restore (FR-23): `GET /api/admin/backup`, `POST /api/admin/restore` (requireAdminApi + service role) / รูปแบบไฟล์และการตรวจอยู่ที่ `src/lib/backup/format.ts` (เพิ่มตารางใหม่ต้องเพิ่มที่นี่ + backup route + `admin_restore()`) / `admin_restore(jsonb)` เรียกได้เฉพาะ service role, insert เฉพาะที่ไม่มี ไม่เขียนทับ
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
 ### Auth
@@ -126,3 +127,4 @@ docs/requirements.md     # สเปก
 - [x] M7 ส่วน Admin (FR-11, 18–20)
 - [x] M8 Dashboard (FR-13, 14, 16)
 - [x] วันลา (FR-22)
+- [x] สำรอง/กู้คืนข้อมูล (FR-23)

@@ -1,4 +1,12 @@
-import { CalendarCogIcon, ChevronRightIcon, Columns3Icon, ShieldIcon, TagsIcon, UsersIcon } from "lucide-react";
+import {
+  CalendarCogIcon,
+  ChevronRightIcon,
+  Columns3Icon,
+  DatabaseBackupIcon,
+  ShieldIcon,
+  TagsIcon,
+  UsersIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth";
@@ -32,6 +40,12 @@ const SECTIONS = [
     icon: CalendarCogIcon,
     title: "ตั้งค่าปีงบประมาณ",
     description: "เดือนเริ่มปีงบประมาณที่ใช้ร่วมกันทั้งระบบ",
+  },
+  {
+    href: ROUTES.adminBackup,
+    icon: DatabaseBackupIcon,
+    title: "สำรองและกู้คืนข้อมูล",
+    description: "ดาวน์โหลด backup งานของทุกคนและการตั้งค่า / กู้คืนจากไฟล์",
   },
 ] as const;
 
