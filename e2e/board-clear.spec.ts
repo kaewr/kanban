@@ -1,7 +1,6 @@
-// BR-47 clear own board (selected year, soft delete, typed confirmation) and the
-// "มี N งานด้านบน" indicator on sticky column headers.
+// BR-47 clear own board (selected year, soft delete, typed confirmation).
 import { expect, gotoReady, loginAs, test } from "./fixtures";
-import { cardByTitle, column } from "./support/board";
+import { cardByTitle } from "./support/board";
 import { currentYear, seedTasks, tasksOf } from "./support/tasks";
 
 test.describe("clear own board", () => {
@@ -61,26 +60,4 @@ test.describe("clear own board", () => {
     await expect(cardByTitle(page, "ของพนักงาน")).toBeVisible();
     await expect(page.getByRole("button", { name: "ตัวเลือกบอร์ด" })).toHaveCount(0);
   });
-});
-
-test("a short column shows how many cards are above when the page is scrolled", async ({ page, makeUser }) => {
-  const user = await makeUser();
-  await seedTasks(user.id, [
-    ...Array.from({ length: 10 }, (_, i) => ({ title: `ยาว ${String(i + 1).padStart(2, "0")}`, status: "short_term" as const })),
-    { title: "งานเดียว", status: "in_progress", startedAt: new Date().toISOString() },
-  ]);
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await loginAs(page, user);
-
-  const inProgress = column(page, "in_progress");
-  await expect(inProgress.getByTestId("cards-above")).toHaveCount(0);
-
-  await cardByTitle(page, "ยาว 10").scrollIntoViewIfNeeded();
-  await page.mouse.wheel(0, 400);
-  const indicator = inProgress.getByTestId("cards-above");
-  await expect(indicator).toHaveText("มี 1 งานด้านบน");
-
-  await indicator.click();
-  await expect(cardByTitle(inProgress, "งานเดียว")).toBeInViewport();
-  await expect(indicator).toHaveCount(0);
 });

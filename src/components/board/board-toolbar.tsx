@@ -50,8 +50,7 @@ export function BoardToolbar({
   else if (status === "saved") message = "บันทึกแล้ว";
 
   return (
-    // Sticks under the app header on large screens so บันทึก stays in reach (column headers stick below it).
-    <div className="z-20 flex flex-wrap items-center gap-x-4 gap-y-2 bg-background lg:sticky lg:top-14 lg:-mx-4 lg:h-12 lg:flex-nowrap lg:px-4">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <h1 className="flex items-center gap-2 text-2xl font-semibold">
         <KanbanIcon className="size-6 text-primary" aria-hidden />
         บอร์ด

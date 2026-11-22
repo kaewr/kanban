@@ -152,3 +152,14 @@
     @apply font-sans;
   }
 }
+/* Column card lists: thin scrollbar, visible only while hovering the column. */
+@layer utilities {
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .scroll-thin:hover,
+  .scroll-thin:focus-within {
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 40%, transparent) transparent;
+  }
+}

@@ -1,5 +1,5 @@
-// Long columns: one page scroll, sticky column headers with "+ เพิ่มงาน" on top,
-// 10 cards per column with "แสดงเพิ่มอีก 10" until all are shown.
+// Long columns: each column sizes to its cards and scrolls on its own (max = screen),
+// "+ เพิ่มงาน" on top, 10 cards per column with "แสดงเพิ่มอีก 10" until all are shown.
 import type { Page } from "@playwright/test";
 import { expect, loginAs, test } from "./fixtures";
 import { cardByTitle, column, mouseDrag, unsavedCount } from "./support/board";
@@ -14,7 +14,7 @@ async function moveWithMenu(page: Page, title: string, to: string) {
 }
 
 test.describe("long columns", () => {
-  test("columns show 10 cards, load 10 more at a time, and keep the header in view", async ({ page, makeUser }) => {
+  test("columns show 10 cards, load 10 more at a time, and scroll on their own", async ({ page, makeUser }) => {
     test.slow();
     const user = await makeUser();
     await seedTasks(user.id, [
@@ -47,12 +47,19 @@ test.describe("long columns", () => {
     await expect(titles).toHaveCount(24);
     await expect(shortTerm.getByTestId("column-more")).toHaveCount(0);
 
-    // No scroll area inside the column: the page scrolls and the header stays visible.
-    const list = shortTerm.locator("ol");
-    expect(await list.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
+    // The long column scrolls inside itself; the page does not grow and the header stays put.
+    const area = shortTerm.getByTestId("column-drop");
+    expect(await area.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    const pageOverflow = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+    expect(pageOverflow).toBeLessThan(80);
     await cardByTitle(shortTerm, "ค้าง 24").scrollIntoViewIfNeeded();
     await expect(add).toBeInViewport();
-    await expect(page.getByRole("button", { name: "บันทึก", exact: true })).toBeInViewport();
+    expect(await page.evaluate(() => window.scrollY)).toBeLessThan(80);
+
+    // Columns are as tall as their cards: the empty review column is much shorter.
+    const reviewBox = await column(page, "review").boundingBox();
+    const shortBox = await shortTerm.boundingBox();
+    expect(reviewBox!.height).toBeLessThan(shortBox!.height / 2);
 
     await shortTerm.getByRole("button", { name: "ย่อกลับ" }).click();
     await expect(titles).toHaveCount(10);
@@ -75,9 +82,7 @@ test.describe("long columns", () => {
     await expect(cardByTitle(done, "ค้าง 01")).toBeVisible();
     await expect(done.getByTestId("task-title")).toHaveCount(10);
     await expect(cardByTitle(done, "เสร็จ 06")).toHaveCount(0);
-    // Dragging onto a long column works too (from the top, where the card is not under
-    // the sticky headers).
-    await page.evaluate(() => window.scrollTo(0, 0));
+    // Dragging onto a long column works too.
     await mouseDrag(page, cardByTitle(page, "ค้าง 02"), done);
     await expect(cardByTitle(done, "ค้าง 02")).toBeAttached();
     await expect(unsavedCount(page)).toHaveText("ยังไม่บันทึก 2 รายการ");

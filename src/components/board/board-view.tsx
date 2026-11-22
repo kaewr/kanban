@@ -6,10 +6,13 @@ import {
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
-  closestCorners,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
   type Announcements,
+  type CollisionDetection,
+  type DragOverEvent,
   type DragEndEvent,
   type DragStartEvent,
   type UniqueIdentifier,
@@ -40,6 +43,16 @@ import { TaskDialog, type TaskDialogMode } from "./task-dialog";
 
 type Columns = Record<TaskStatus, BoardTask[]>;
 
+/**
+ * Where a dragged card lands is decided by the pointer rather than by the card's corners,
+ * so the column under the cursor is the one that glows and receives the card. Falls back
+ * to the overlapping area when the pointer is between columns or with the keyboard.
+ */
+const pointerFirst: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  return hits.length > 0 ? hits : rectIntersection(args);
+};
+
 function columnStatus(id: UniqueIdentifier): TaskStatus | null {
   const value = String(id);
   if (!value.startsWith(COLUMN_ID_PREFIX)) return null;
@@ -54,6 +67,8 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
   const moveTask = useBoardStore((s) => s.moveTask);
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Column a dragged card would drop into right now (glows).
+  const [overStatus, setOverStatus] = useState<TaskStatus | null>(null);
   const [dialog, setDialog] = useState<TaskDialogMode | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<BoardFilter>(EMPTY_FILTER);
@@ -117,8 +132,13 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
     setActiveId(String(event.active.id));
   }
 
+  function onDragOver({ over }: DragOverEvent) {
+    setOverStatus(over ? (columnStatus(over.id) ?? tasks[String(over.id)]?.status ?? null) : null);
+  }
+
   function onDragEnd({ active, over }: DragEndEvent) {
     setActiveId(null);
+    setOverStatus(null);
     if (!over) return;
     const task = tasks[String(active.id)];
     if (!task) return;
@@ -164,10 +184,14 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
       <DndContext
         id="board-dnd"
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={pointerFirst}
         onDragStart={onDragStart}
+        onDragOver={onDragOver}
         onDragEnd={onDragEnd}
-        onDragCancel={() => setActiveId(null)}
+        onDragCancel={() => {
+          setActiveId(null);
+          setOverStatus(null);
+        }}
         accessibility={{
           announcements,
           screenReaderInstructions: {
@@ -181,7 +205,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
         </div>
 
         {/* Phones: one column per screen with snap scrolling; desktop: all five. */}
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:px-0 lg:overflow-visible">
+        <div className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:px-0">
           {BOARD_COLUMNS.map((column) => (
             <BoardColumn
               key={column.status}
@@ -191,6 +215,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
               tasks={shownColumns[column.status]}
               totalCount={columns[column.status].length}
               today={today}
+              dropTarget={activeId !== null && overStatus === column.status}
               snapshot={snapshot}
               categoryNames={categoryNames}
               onAdd={() => setDialog({ kind: "create", status: column.status })}

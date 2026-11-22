@@ -92,7 +92,7 @@ docs/requirements.md     # สเปก
 - FR-16 Dashboard คำนวณใน `dashboard_summary(p_year, p_unit_id, p_owner_id)` (security invoker → RLS) ขอบเขต = งานที่ `tasks.year` = ปีที่เลือก / กราฟใช้ token `--chart-bar` (ผ่าน dataviz validator ทั้ง light/dark) และมี "ดูเป็นตาราง"
 - วันลา (FR-22, BR-40..44): ตาราง `leaves` RLS แบบเดียวกับ tasks / ห้ามซ้อนด้วย trigger `leaves_prevent_overlap` / นับวันทำการจันทร์–ศุกร์ (`src/lib/leave/rules.ts` ฝั่ง client, `leave_summary()` ฝั่ง SQL) / บันทึกทันทีผ่าน server action (ไม่ผูกกับปุ่มบันทึกของบอร์ด)
 - Backup/restore (FR-23): `GET /api/admin/backup`, `POST /api/admin/restore` (requireAdminApi + service role) / รูปแบบไฟล์และการตรวจอยู่ที่ `src/lib/backup/format.ts` (เพิ่มตารางใหม่ต้องเพิ่มที่นี่ + backup route + `admin_restore()`) / `admin_restore(jsonb)` เรียกได้เฉพาะ service role, insert เฉพาะที่ไม่มี ไม่เขียนทับ
-- คอลัมน์บอร์ด (BR-13): แบ่งหน้า 10 ใบด้วย `pageColumn()` + `COLUMN_PAGE_SIZE` / หัวคอลัมน์ sticky ที่ `lg:top-[6.5rem]` (= header 3.5rem + toolbar `lg:h-12`) ถ้าเปลี่ยนความสูง toolbar ต้องแก้คู่กัน / ล้างบอร์ดตัวเอง (BR-47) ผ่าน `clear_my_tasks(p_year)` เฉพาะ `auth.uid()`
+- คอลัมน์บอร์ด (BR-13): แต่ละคอลัมน์ `max-h` เท่าจอและเลื่อนในตัวเอง (`.scroll-thin` ใน globals.css) แบ่งหน้า 10 ใบด้วย `pageColumn()` + `COLUMN_PAGE_SIZE` / ลากวางใช้ collision `pointerFirst` (pointerWithin → rectIntersection) droppable = ทั้ง `<section>` คอลัมน์ / คอลัมน์ปลายทางเรืองแสงผ่าน `dropTarget` / ล้างบอร์ดตัวเอง (BR-47) ผ่าน `clear_my_tasks(p_year)` เฉพาะ `auth.uid()`
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
 ### Auth
