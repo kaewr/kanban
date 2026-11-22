@@ -163,7 +163,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
               task={activeTask}
               categoryName={categoryNames.get(activeTask.categoryId) ?? ""}
               unsaved={false}
-              className="rotate-1 shadow-lg"
+              className="rotate-2 cursor-grabbing shadow-xl ring-primary/30"
             />
           ) : null}
         </DragOverlay>

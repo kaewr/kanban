@@ -99,6 +99,7 @@ docs/requirements.md     # สเปก
 - TypeScript strict ห้าม `any` ถ้าเลี่ยงได้ สร้าง type ของ DB ด้วย `npx supabase gen types`
 - ข้อความบน UI และ error ที่ผู้ใช้เห็นเป็นภาษาไทย / ชื่อตัวแปร ฟังก์ชัน คอมเมนต์ในโค้ด เป็นภาษาอังกฤษ
 - ค่าสถานะใช้ตามสเปก: `long_term`, `short_term`, `in_progress`, `review`, `done`
+- ธีม: สีแบรนด์อยู่ใน `src/app/globals.css` (ม่วง ม.พะเยา `#8D38C9` = primary, ทอง ICT `#996600` = `brand-gold`) ใช้ token (`bg-primary`, `text-brand-gold`) ไม่ hardcode hex / สีสถานะ pastel + ไอคอนอยู่ที่ `src/components/board/status-style.ts` (ไม่ใช้สีม่วงกับสถานะ) / ไอคอนใช้ `lucide-react` / ฟอนต์ Inter (ละติน+ตัวเลข) + IBM Plex Sans Thai
 - component เล็กและแยกหน้าที่ชัดเจน ไม่สร้าง abstraction ที่ยังไม่จำเป็น
 
 ## Workflow

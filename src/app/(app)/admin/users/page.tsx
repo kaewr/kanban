@@ -1,3 +1,4 @@
+import { ChevronLeftIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -60,17 +61,21 @@ export default async function AdminUsersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <Link href={ROUTES.admin} className="text-sm text-muted-foreground hover:underline">
-            ← Admin
+          <Link href={ROUTES.admin} className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+            <ChevronLeftIcon className="size-4" aria-hidden />
+            Admin
           </Link>
-          <h1 className="text-2xl font-semibold">จัดการผู้ใช้</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold">
+          <UsersIcon className="size-6 text-primary" aria-hidden />
+          จัดการผู้ใช้
+        </h1>
           <p className="text-sm text-muted-foreground">ทั้งหมด {users.length} คน</p>
         </div>
         <CreateUserDialog />
       </div>
 
       {/* Desktop: table */}
-      <div className="hidden rounded-xl ring-1 ring-foreground/10 md:block">
+      <div className="hidden overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10 md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -115,7 +120,7 @@ export default async function AdminUsersPage() {
             <li
               key={user.id}
               data-username={user.username}
-              className={`flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/10 ${user.isActive ? "" : "opacity-60"}`}
+              className={`flex flex-col gap-3 rounded-xl bg-card p-4 shadow-xs ring-1 ring-foreground/10 ${user.isActive ? "" : "opacity-60"}`}
             >
               <div className="flex flex-col gap-1">
                 <p className="font-medium">

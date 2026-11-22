@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowDownIcon, ArrowUpIcon, EyeIcon, EyeOffIcon, PlusIcon } from "lucide-react";
 import { useState, useTransition, type FormEvent } from "react";
 import { FormMessage } from "@/components/form-message";
 import { Badge } from "@/components/ui/badge";
@@ -52,14 +53,15 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
             required
           />
         </div>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="gap-1.5">
+          <PlusIcon aria-hidden />
           เพิ่ม
         </Button>
       </form>
 
       <FormMessage error={error} />
 
-      <ol className="flex flex-col divide-y rounded-xl ring-1 ring-foreground/10" aria-busy={pending}>
+      <ol className="flex flex-col divide-y overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10" aria-busy={pending}>
         {categories.map((category, index) => (
           <li
             key={category.id}
@@ -79,7 +81,7 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
                 disabled={pending || index === 0}
                 onClick={() => run(() => moveCategory(category.id, -1))}
               >
-                ↑
+                <ArrowUpIcon aria-hidden />
               </Button>
               <Button
                 variant="ghost"
@@ -88,7 +90,7 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
                 disabled={pending || index === categories.length - 1}
                 onClick={() => run(() => moveCategory(category.id, 1))}
               >
-                ↓
+                <ArrowDownIcon aria-hidden />
               </Button>
               <RenameCategoryDialog category={category} disabled={pending} />
               {category.isActive ? (
@@ -100,6 +102,7 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
                   title={canDeactivate(categories, category.id) ? undefined : "ต้องมีหมวดหมู่ที่ใช้งานอย่างน้อย 1 หมวด"}
                   onClick={() => run(() => setCategoryActive(category.id, false))}
                 >
+                  <EyeOffIcon aria-hidden />
                   ปิดใช้งาน
                 </Button>
               ) : (
@@ -110,6 +113,7 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
                   disabled={pending}
                   onClick={() => run(() => setCategoryActive(category.id, true))}
                 >
+                  <EyeIcon aria-hidden />
                   เปิดใช้งาน
                 </Button>
               )}

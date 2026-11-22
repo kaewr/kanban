@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckIcon, CircleDotIcon, KanbanIcon, LoaderCircleIcon, SaveIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { changedTasks } from "@/lib/board/changes";
 import type { BoardOwner } from "@/lib/board/load";
 import { yearLabel } from "@/lib/board/year";
 import { boardHref } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 import { useBoardStore } from "@/stores/board-store-provider";
 import type { YearType } from "@/types/domain";
 import { BoardOwnerSelect } from "./board-owner-select";
@@ -48,7 +50,10 @@ export function BoardToolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <h1 className="text-2xl font-semibold">บอร์ด</h1>
+      <h1 className="flex items-center gap-2 text-2xl font-semibold">
+        <KanbanIcon className="size-6 text-primary" aria-hidden />
+        บอร์ด
+      </h1>
 
       {owners.length > 0 && <BoardOwnerSelect owners={owners} viewer={viewer} ownerId={ownerId} year={year} />}
 
@@ -79,10 +84,31 @@ export function BoardToolbar({
             บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง
           </p>
         )}
-        <p role="status" aria-live="polite" data-testid="unsaved-count" className="text-sm text-muted-foreground">
-          {message}
-        </p>
-        <Button onClick={save} disabled={changeCount === 0 || saving}>
+        <div
+          className={cn(
+            "flex items-center gap-1.5 rounded-full px-3 py-1 text-sm",
+            changeCount > 0 && !saving
+              ? "bg-brand-gold-soft text-brand-gold ring-1 ring-brand-gold/25"
+              : status === "saved" && !saving
+                ? "text-emerald-700 dark:text-emerald-400"
+                : "text-muted-foreground",
+          )}
+        >
+          {changeCount > 0 && !saving ? (
+            <CircleDotIcon className="size-3.5" aria-hidden />
+          ) : status === "saved" && !saving ? (
+            <CheckIcon className="size-3.5" aria-hidden />
+          ) : null}
+          <p role="status" aria-live="polite" data-testid="unsaved-count">
+            {message}
+          </p>
+        </div>
+        <Button onClick={save} disabled={changeCount === 0 || saving} className="gap-1.5">
+          {saving ? (
+            <LoaderCircleIcon className="animate-spin" aria-hidden />
+          ) : (
+            <SaveIcon aria-hidden />
+          )}
           {saving ? "กำลังบันทึก…" : "บันทึก"}
         </Button>
       </div>

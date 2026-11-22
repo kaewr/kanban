@@ -48,7 +48,7 @@ test.describe("FR-04 create user", () => {
     await page.getByRole("link", { name: /จัดการผู้ใช้/ }).click();
     await expect(page).toHaveURL(/\/admin\/users$/);
 
-    await page.getByRole("button", { name: "+ เพิ่มผู้ใช้" }).click();
+    await page.getByRole("button", { name: "เพิ่มผู้ใช้" }).click();
     await dialog(page).getByLabel("ชื่อผู้ใช้").fill(username.toUpperCase()); // stored lower-case (BR-22)
     await dialog(page).getByLabel("ชื่อที่แสดง").fill("พนักงาน ทดสอบ");
     await dialog(page).getByLabel("บทบาท").selectOption("user");
@@ -76,7 +76,7 @@ test.describe("FR-04 create user", () => {
 
     await loginAs(page, admin);
     await openUsersPage(page);
-    await page.getByRole("button", { name: "+ เพิ่มผู้ใช้" }).click();
+    await page.getByRole("button", { name: "เพิ่มผู้ใช้" }).click();
     await dialog(page).getByLabel("ชื่อผู้ใช้").fill(existing.username);
     await dialog(page).getByLabel("ชื่อที่แสดง").fill("ซ้ำ");
     await dialog(page).getByRole("button", { name: "สร้างผู้ใช้" }).click();

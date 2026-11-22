@@ -1,3 +1,4 @@
+import { ChevronLeftIcon, TagsIcon } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { ROUTES } from "@/lib/routes";
@@ -26,10 +27,14 @@ export default async function AdminCategoriesPage() {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <Link href={ROUTES.admin} className="text-sm text-muted-foreground hover:underline">
-          ← Admin
+        <Link href={ROUTES.admin} className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+          <ChevronLeftIcon className="size-4" aria-hidden />
+          Admin
         </Link>
-        <h1 className="text-2xl font-semibold">หมวดหมู่งาน</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold">
+          <TagsIcon className="size-6 text-primary" aria-hidden />
+          หมวดหมู่งาน
+        </h1>
         <p className="text-sm text-muted-foreground">
           ลำดับนี้ใช้ในช่องเลือกหมวดหมู่ของงาน หมวดที่ปิดใช้งานจะเลือกให้งานใหม่ไม่ได้ แต่งานเดิมยังแสดงตามปกติ
         </p>

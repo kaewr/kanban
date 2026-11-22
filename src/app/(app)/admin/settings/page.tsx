@@ -1,3 +1,4 @@
+import { CalendarCogIcon, ChevronLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { ROUTES } from "@/lib/routes";
@@ -18,10 +19,14 @@ export default async function AdminSettingsPage() {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <Link href={ROUTES.admin} className="text-sm text-muted-foreground hover:underline">
-          ← Admin
+        <Link href={ROUTES.admin} className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+          <ChevronLeftIcon className="size-4" aria-hidden />
+          Admin
         </Link>
-        <h1 className="text-2xl font-semibold">ตั้งค่ารูปแบบปี</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold">
+          <CalendarCogIcon className="size-6 text-primary" aria-hidden />
+          ตั้งค่ารูปแบบปี
+        </h1>
       </div>
       <YearSettingsForm
         yearType={data.year_type === "fiscal" ? "fiscal" : "calendar"}

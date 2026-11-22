@@ -6,8 +6,12 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-soft: var(--brand-gold-soft);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-plex-thai);
+  /* Inter for Latin letters and digits, IBM Plex Sans Thai for Thai (Inter has no Thai glyphs). */
+  --font-sans: var(--font-inter), var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -49,72 +53,81 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  /* Brand: University of Phayao purple, ICT gold */
+  --brand-purple: #8d38c9;
+  --brand-gold: #996600;
+  --brand-gold-soft: #fbf3e0;
+
+  --background: #f7f5fb;
+  --foreground: #1f1a2e;
+  --card: #ffffff;
+  --card-foreground: #1f1a2e;
+  --popover: #ffffff;
+  --popover-foreground: #1f1a2e;
+  --primary: var(--brand-purple);
+  --primary-foreground: #ffffff;
+  --secondary: #f1ecf8;
+  --secondary-foreground: #4a2470;
+  --muted: #f1eef6;
+  --muted-foreground: #645e78;
+  --accent: #f3ebfb;
+  --accent-foreground: #5b2386;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #e5e0ee;
+  --input: #ddd6e8;
+  --ring: var(--brand-purple);
+  --chart-1: var(--brand-purple);
+  --chart-2: var(--brand-gold);
+  --chart-3: #38bdf8;
+  --chart-4: #34d399;
+  --chart-5: #fb7185;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1f1a2e;
+  --sidebar-primary: var(--brand-purple);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3ebfb;
+  --sidebar-accent-foreground: #5b2386;
+  --sidebar-border: #e5e0ee;
+  --sidebar-ring: var(--brand-purple);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --brand-purple: #b57ee5;
+  --brand-gold: #d9a93d;
+  --brand-gold-soft: #3a2e12;
+
+  --background: #15121d;
+  --foreground: #f2eff7;
+  --card: #1e1a28;
+  --card-foreground: #f2eff7;
+  --popover: #1e1a28;
+  --popover-foreground: #f2eff7;
+  --primary: var(--brand-purple);
+  --primary-foreground: #1a0d26;
+  --secondary: #2a2436;
+  --secondary-foreground: #f2eff7;
+  --muted: #2a2436;
+  --muted-foreground: #a9a2bb;
+  --accent: #2f2440;
+  --accent-foreground: #e6d4f7;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --ring: var(--brand-purple);
+  --chart-1: var(--brand-purple);
+  --chart-2: var(--brand-gold);
+  --chart-3: #7dd3fc;
+  --chart-4: #6ee7b7;
+  --chart-5: #fda4af;
+  --sidebar: #1e1a28;
+  --sidebar-foreground: #f2eff7;
+  --sidebar-primary: var(--brand-purple);
+  --sidebar-primary-foreground: #1a0d26;
+  --sidebar-accent: #2f2440;
+  --sidebar-accent-foreground: #e6d4f7;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: var(--brand-purple);
 }
 
 @layer base {
@@ -123,6 +136,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01"; /* Inter: simpler a, open digits */
+  }
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight;
   }
   html {
     @apply font-sans;

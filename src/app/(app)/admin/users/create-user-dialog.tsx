@@ -1,5 +1,6 @@
 "use client";
 
+import { UserPlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { FormMessage } from "@/components/form-message";
@@ -53,7 +54,10 @@ export function CreateUserDialog() {
         if (next) setError(undefined);
       }}
     >
-      <DialogTrigger render={<Button />}>+ เพิ่มผู้ใช้</DialogTrigger>
+      <DialogTrigger render={<Button className="gap-1.5" />}>
+        <UserPlusIcon aria-hidden />
+        เพิ่มผู้ใช้
+      </DialogTrigger>
       <DialogContent>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <DialogHeader>

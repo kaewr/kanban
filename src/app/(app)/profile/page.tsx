@@ -1,3 +1,4 @@
+import { UserRoundIcon } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
 import { PasswordForm } from "@/components/password-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,10 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6">
-      <h1 className="text-2xl font-semibold">โปรไฟล์</h1>
+      <h1 className="flex items-center gap-2 text-2xl font-semibold">
+          <UserRoundIcon className="size-6 text-primary" aria-hidden />
+          โปรไฟล์
+        </h1>
 
       <Card>
         <CardHeader>
