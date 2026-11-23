@@ -77,7 +77,7 @@ docs/requirements.md     # สเปก
 - migration ที่เขียนแล้วและ push แล้ว ห้ามแก้ไฟล์เดิม ให้สร้างไฟล์ใหม่
 - **prod มีข้อมูลจริงที่ใช้งานอยู่ (ตั้งแต่ 23 พ.ย. 2026)**: migration ต้องไม่ทำลายข้อมูลเดิม (เพิ่มตาราง/คอลัมน์ที่มี default, `create or replace`, `on conflict do nothing`) ถ้าต้อง UPDATE/DELETE/drop/rename หรือเพิ่ม constraint ที่ข้อมูลเดิมอาจผิด ให้แจ้งในแผนและรออนุมัติ / ให้ผู้ใช้ดาวน์โหลด backup (`/admin/backup`) ก่อน `db push --remote` ทุกครั้ง / ห้ามเขียนข้อมูลลง prod (สคริปต์ `*:prod`, SQL, service role) ถ้าผู้ใช้ไม่ได้สั่ง
 - ฟังก์ชันที่ผู้ใช้เรียกใช้ `security invoker` เพื่อให้ RLS ทำงาน
-- ข้อยกเว้น: helper ที่ใช้ใน policy (`is_admin()`, `is_active_user()`) เป็น `security definer` + `set search_path = ''` เพื่อเลี่ยง RLS วนซ้ำบน `profiles`
+- ข้อยกเว้น: helper ที่ใช้ใน policy (`is_admin()`, `is_active_user()`, `is_active_profile()`) เป็น `security definer` + `set search_path = ''` เพื่อเลี่ยง RLS วนซ้ำบน `profiles` / `review_decide()` และ trigger `task_reviews_notify()` เป็น `security definer` เพราะผู้ตรวจไม่ใช่เจ้าของงาน — ทำได้เฉพาะคำขอที่เปิดอยู่และผู้เรียกเป็นผู้ตรวจ
 - `tasks.year` เก็บเป็น พ.ศ. / ปีงบเรียกตามปีที่สิ้นสุด (ต.ค. 2569 = ปีงบ 2570)
 - ผู้ใช้ไม่มีสิทธิ์ UPDATE `profiles` แก้ผ่าน server route + service role เท่านั้น / ไม่มี hard DELETE (soft delete)
 
@@ -96,6 +96,7 @@ docs/requirements.md     # สเปก
 - คอลัมน์บอร์ด (BR-13): แต่ละคอลัมน์ `max-h` เท่าจอและเลื่อนในตัวเอง (`.scroll-thin` ใน globals.css) แบ่งหน้า 10 ใบด้วย `pageColumn()` + `COLUMN_PAGE_SIZE` / ลากวางใช้ collision `pointerFirst` (pointerWithin → rectIntersection) droppable = ทั้ง `<section>` คอลัมน์ / คอลัมน์ปลายทางเรืองแสงผ่าน `dropTarget` / ล้างบอร์ดตัวเอง (BR-47) ผ่าน `clear_my_tasks(p_year)` เฉพาะ `auth.uid()`
 - วันหยุด/ปฏิทิน (FR-24, BR-48, 49): วันลาและวันหยุดเป็นป้ายเท่านั้น ไม่ผูกกับงานหรือการนับวันลา / ตาราง `holidays` (ทุกคนอ่าน admin เขียน, ลบจริงได้) จัดการที่ `/admin/holidays` ผ่าน Server Action / แถบ `TodayBanner` บนบอร์ด (`loadTodayNotice()` ใน `src/lib/leave/today.ts`) / ปฏิทินที่ `/leave/calendar` (helper ใน `src/lib/leave/calendar.ts`) ไม่แสดงวันลาบนเสาร์-อาทิตย์
 - หัวข้องาน (FR-26, BR-51): ตาราง `task_title_presets` (ทุกคนอ่าน admin เขียน, ลบจริงได้) จัดการที่ `/admin/task-titles` ผ่าน Server Action / โหลดมากับ `loadBoard()` เป็น `titlePresets` / dropdown ใน `TaskDialog` แค่คัดลอกชื่อไปที่ `tasks.title` (ไม่มี FK) / BR-52 งานใหม่ default `dueDate` = วันนี้ ยกเว้น `long_term`
+- ตรวจงาน (FR-27, BR-53..56): `tasks.reviewer_id` มีค่าเฉพาะใน `review` (store ล้างเมื่อย้ายออก, `save_board_changes` บังคับซ้ำและสร้าง/ยกเลิก `task_reviews`) / ผู้ตรวจตัดสินที่ `/reviews` ผ่าน `review_decide()` / รายชื่อผู้ตรวจโหลดด้วย service role ใน `src/lib/people.ts` (id + ชื่อ + สังกัด) ส่งผ่าน `ReviewInfoProvider` / แจ้งเตือนสร้างโดย trigger เท่านั้น กระดิ่ง `NotificationBell` ดึงผ่าน server action `loadNotifications()` / backup รวม `task_reviews` (ไม่รวม notifications) restore ตั้ง `app.restoring` กันแจ้งเตือน / ลบ test user ต้องลบ notifications → task_reviews ก่อน (`e2e/support/users.ts`)
 - การ์ดกะทัดรัด (FR-25, BR-50): `useCardDensity()` เก็บใน localStorage `kanban:card-density` (ค่าเริ่มต้นตอน SSR = ปกติ) ส่ง `compact` ไปที่ `TaskCardContent`
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
@@ -134,3 +135,4 @@ docs/requirements.md     # สเปก
 - [x] วันลา (FR-22)
 - [x] สำรอง/กู้คืนข้อมูล (FR-23)
 - [x] แถบวันนี้ลา/วันหยุด + ปฏิทินวันลา + วันหยุดราชการ (FR-24) + การ์ดกะทัดรัด (FR-25) + หัวข้องานสำเร็จรูป / กำหนดเสร็จเริ่มต้นวันนี้ (FR-26)
+- [x] Tag ผู้ตรวจ + หน้าตรวจงาน + แจ้งเตือนในระบบ (FR-27)

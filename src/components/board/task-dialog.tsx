@@ -20,6 +20,7 @@ import { bangkokDate, dateInputToTimestamp } from "@/lib/board/dates";
 import { validateTaskInput, type TaskInputErrors } from "@/lib/board/rules";
 import type { BoardCategory, BoardTask, TaskInput } from "@/lib/board/types";
 import { useBoardStore } from "@/stores/board-store-provider";
+import { ReviewerSelect } from "./reviewer-select";
 import type { TaskPriority, TaskStatus } from "@/types/domain";
 
 export type TaskDialogMode = { kind: "create"; status: TaskStatus } | { kind: "edit"; taskId: string };
@@ -109,6 +110,7 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
       progress: showProgress && progress !== "" ? Number(progress) : (task?.progress ?? null),
       startedAt: started ? dateInputToTimestamp(started, task?.startedAt ?? openedAt) : null,
       completedAt: completed ? dateInputToTimestamp(completed, task?.completedAt ?? openedAt) : null,
+      reviewerId: status === "review" ? text("reviewerId") || null : null,
     };
 
     const found = validateTaskInput(input, status, isNew);
@@ -219,6 +221,12 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
             defaultValue={task ? (task.dueDate ?? "") : status === "long_term" ? "" : today}
           />
         </Field>
+
+        {status === "review" && (
+          <Field id="task-reviewer" label="ผู้ตรวจ">
+            <ReviewerSelect id="task-reviewer" name="reviewerId" defaultValue={task?.reviewerId ?? ""} />
+          </Field>
+        )}
 
         {showProgress && (
           <Field id="task-progress" label="ความคืบหน้า (%)" error={errors.progress}>

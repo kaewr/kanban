@@ -12,6 +12,7 @@ export const ROUTES = {
   adminHolidays: "/admin/holidays",
   adminTaskTitles: "/admin/task-titles",
   leaveCalendar: "/leave/calendar",
+  reviews: "/reviews",
   profile: "/profile",
 } as const;
 

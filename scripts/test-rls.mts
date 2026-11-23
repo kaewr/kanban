@@ -62,6 +62,8 @@ async function cleanup(): Promise<void> {
     const taskIds = (tasks ?? []).map((t: { id: string }) => t.id);
     await service.from("leaves").delete().in("owner_id", ids);
     await service.from("leaves").delete().in("created_by", ids);
+    await service.from("notifications").delete().in("user_id", ids);
+    await service.from("task_reviews").delete().in("owner_id", ids);
     await service.from("holidays").delete().eq("name", "rls_test");
     await service.from("task_title_presets").delete().ilike("name", "rls_test");
     await service.from("task_history").delete().in("changed_by", ids);
@@ -372,6 +374,88 @@ async function main(): Promise<void> {
     );
     const restore = await c.rpc("reorder_categories", { p_ids: ids });
     if (restore.error) throw new Error(`restore order: ${restore.error.message}`);
+  }
+
+  // ------------------------------------------------------------------ BR-53..56 reviews
+  console.log("\nReview tags (A asks B to review)");
+  {
+    const row = must(await service.from("tasks").select("*").eq("id", taskA).single(), "read task A") as {
+      version: number; title: string; category_id: string; priority: number; position: number;
+    };
+    const saveAs = (client: typeof a.client, reviewerId: string | null, version: number) =>
+      client.rpc("save_board_changes", {
+        p_changes: {
+          tasks: [{
+            op: "update", id: taskA, version, owner_id: a.id, title: row.title, description: null,
+            status: "review", category_id: row.category_id, priority: row.priority, year: YEAR,
+            due_date: null, progress: null, position: row.position,
+            started_at: new Date().toISOString(), completed_at: null, reviewer_id: reviewerId,
+            moves: [{ from: "short_term", to: "review", moved_at: new Date().toISOString() }],
+          }],
+        },
+      });
+
+    const self = await saveAs(a.client, a.id, row.version);
+    check("owner cannot tag themselves", self.error !== null);
+
+    const tagged = await saveAs(a.client, b.id, row.version);
+    check("owner saves the task into review with B as reviewer", tagged.error === null, tagged.error?.message);
+    const open = must(
+      await service.from("task_reviews").select("id, status, reviewer_id").eq("task_id", taskA).eq("status", "open"),
+      "read open review",
+    ) as { id: string }[];
+    check("one open review request is created", open.length === 1);
+    const reviewId = open[0]?.id ?? "";
+
+    const bNotes = await b.client.from("notifications").select("id, kind, user_id");
+    check(
+      "B is notified (review_requested)",
+      (bNotes.data ?? []).some((n) => n.kind === "review_requested"),
+      bNotes.error?.message,
+    );
+    const aSeesB = await a.client.from("notifications").select("id").eq("user_id", b.id);
+    check("A cannot read B's notifications", (aSeesB.data ?? []).length === 0);
+    const noteId = bNotes.data?.[0]?.id ?? 0;
+    const markRead = await b.client.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", noteId).select("id");
+    check("B can mark own notification read", (markRead.data ?? []).length === 1, markRead.error?.message);
+    const forge = await b.client.from("notifications").update({ kind: "review_approved" }).eq("id", noteId).select("id");
+    check("B cannot change other notification fields", forge.error !== null || (forge.data ?? []).length === 0);
+    const noInsert = await b.client.from("notifications").insert({ user_id: a.id, kind: "review_approved", task_title: "x" });
+    check("users cannot create notifications directly", noInsert.error !== null);
+
+    const bReads = await b.client.from("tasks").select("id").eq("id", taskA);
+    check("reviewer B can read the tagged task", (bReads.data ?? []).length === 1, bReads.error?.message);
+    const bOther = await b.client.from("tasks").select("id").eq("owner_id", a.id);
+    check("reviewer B sees only the tagged task of A", (bOther.data ?? []).length === 1);
+    const bUpd = await b.client.from("tasks").update({ title: "แก้โดยผู้ตรวจ" }).eq("id", taskA).select("id");
+    check("reviewer B cannot edit the task directly", (bUpd.data ?? []).length === 0);
+    const bReq = await b.client.from("task_reviews").insert({ task_id: taskA, owner_id: a.id, reviewer_id: b.id, requested_by: b.id });
+    check("B cannot create review requests for A's task", bReq.error !== null);
+
+    const ownerDecide = await a.client.rpc("review_decide", { p_review_id: reviewId, p_action: "approve" });
+    check("the owner cannot approve their own request", ownerDecide.error !== null);
+    const adminDecide = await admin.client.rpc("review_decide", { p_review_id: reviewId, p_action: "approve" });
+    check("an admin who is not the reviewer cannot decide", adminDecide.error !== null);
+
+    const comment = await b.client.rpc("review_decide", { p_review_id: reviewId, p_action: "comment", p_comment: "ขอแก้หน้า 2" });
+    check("reviewer can comment", comment.error === null, comment.error?.message);
+    const aNotes = await a.client.from("notifications").select("kind");
+    check("owner is notified of the comment", (aNotes.data ?? []).some((n) => n.kind === "review_commented"));
+
+    const approve = await b.client.rpc("review_decide", { p_review_id: reviewId, p_action: "approve" });
+    check("reviewer can approve", approve.error === null, approve.error?.message);
+    const after = must(await service.from("tasks").select("status, reviewer_id, completed_at").eq("id", taskA).single(), "read task") as {
+      status: string; reviewer_id: string | null; completed_at: string | null;
+    };
+    check("approve moves the task to done", after.status === "done" && after.reviewer_id === null && after.completed_at !== null);
+    const hist = await service.from("task_history").select("changed_by").eq("task_id", taskA).eq("to_status", "done");
+    check("history records the reviewer as the mover", (hist.data ?? []).some((h) => h.changed_by === b.id));
+    const again = await b.client.rpc("review_decide", { p_review_id: reviewId, p_action: "return" });
+    check("a closed request cannot be decided again", again.error !== null);
+    const aApproved = await a.client.from("notifications").select("kind");
+    check("owner is notified of the approval", (aApproved.data ?? []).some((n) => n.kind === "review_approved"));
+    const bStill = await b.client.from("tasks").select("id").eq("id", taskA);
+    check("reviewer can still read a task they reviewed", (bStill.data ?? []).length === 1);
   }
 
   // ------------------------------------------------------------------ inactive

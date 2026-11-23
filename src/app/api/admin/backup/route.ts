@@ -9,7 +9,7 @@ export async function GET() {
 
   const supabase = createAdminClient();
   // Soft-deleted tasks and leaves are included so history and the dashboard stay complete.
-  const [profiles, categories, tasks, history, leaves, holidays, presets, settings] = await Promise.all([
+  const [profiles, categories, tasks, history, leaves, holidays, presets, reviews, settings] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, username, display_name, role, unit_id, position, year_type, is_active, created_at")
@@ -24,9 +24,10 @@ export async function GET() {
     supabase.from("leaves").select("*").order("start_date"),
     supabase.from("holidays").select("holiday_date, name, created_at").order("holiday_date"),
     supabase.from("task_title_presets").select("name, sort_order, created_at").order("sort_order"),
+    supabase.from("task_reviews").select("*").order("requested_at"),
     supabase.from("app_settings").select("fiscal_start_month").maybeSingle(),
   ]);
-  const failed = [profiles, categories, tasks, history, leaves, holidays, presets, settings].find((r) => r.error);
+  const failed = [profiles, categories, tasks, history, leaves, holidays, presets, reviews, settings].find((r) => r.error);
   if (failed) return apiError(500, "สร้างไฟล์ backup ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
 
   const now = new Date();
@@ -42,6 +43,7 @@ export async function GET() {
       leaves: leaves.data,
       holidays: holidays.data,
       task_title_presets: presets.data,
+      task_reviews: reviews.data,
       app_settings: settings.data,
     },
   };

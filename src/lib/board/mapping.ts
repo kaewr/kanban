@@ -19,6 +19,7 @@ export function toBoardTask(row: Tables<"tasks">): BoardTask {
     carriedFromYear: row.carried_from_year,
     startedAt: row.started_at,
     completedAt: row.completed_at,
+    reviewerId: row.reviewer_id,
     version: row.version,
     isDeleted: row.is_deleted,
     createdAt: row.created_at,

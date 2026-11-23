@@ -5,7 +5,7 @@ export const BACKUP_FORMAT = "kanban-backup";
 export const BACKUP_VERSION = 1;
 export const BACKUP_MAX_BYTES = 20 * 1024 * 1024;
 
-export const BACKUP_TABLES = ["profiles", "categories", "tasks", "task_history", "leaves", "holidays", "task_title_presets"] as const;
+export const BACKUP_TABLES = ["profiles", "categories", "tasks", "task_history", "leaves", "holidays", "task_title_presets", "task_reviews"] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
 export const BACKUP_TABLE_LABEL: Record<BackupTable, string> = {
@@ -16,6 +16,7 @@ export const BACKUP_TABLE_LABEL: Record<BackupTable, string> = {
   leaves: "วันลา",
   holidays: "วันหยุด",
   task_title_presets: "หัวข้องาน",
+  task_reviews: "คำขอตรวจงาน",
 };
 
 type Row = Record<string, unknown>;
@@ -41,10 +42,11 @@ const REQUIRED: Record<BackupTable, string[]> = {
   leaves: ["id", "owner_id", "leave_type", "start_date", "end_date", "created_by"],
   holidays: ["holiday_date", "name"],
   task_title_presets: ["name"],
+  task_reviews: ["id", "task_id", "owner_id", "reviewer_id", "requested_by"],
 };
 // Tables added after the first backups were made: missing means none.
-const OPTIONAL_TABLES: readonly BackupTable[] = ["holidays", "task_title_presets"];
-const UUID_FIELDS = ["id", "owner_id", "category_id", "task_id", "changed_by", "created_by"];
+const OPTIONAL_TABLES: readonly BackupTable[] = ["holidays", "task_title_presets", "task_reviews"];
+const UUID_FIELDS = ["id", "owner_id", "category_id", "task_id", "changed_by", "created_by", "reviewer_id", "requested_by"];
 
 export type BackupCheck = { ok: true; backup: BackupFile; counts: BackupCounts } | { ok: false; error: string };
 

@@ -16,6 +16,7 @@ function task(partial: Partial<BoardTask> & Pick<BoardTask, "id" | "status" | "p
     carriedFromYear: null,
     startedAt: null,
     completedAt: null,
+    reviewerId: null,
     version: 1,
     isDeleted: false,
     createdAt: "2026-11-01T00:00:00.000Z",
@@ -35,6 +36,7 @@ const input: TaskInput = {
   progress: null,
   startedAt: null,
   completedAt: null,
+  reviewerId: null,
 };
 
 function setup() {
@@ -162,5 +164,45 @@ describe("board store after saving", () => {
     store.getState().restoreDraft([draftTask]);
     expect(store.getState().tasks.a?.title).toBe("จากร่าง");
     expect(changes(store)).toHaveLength(1);
+  });
+});
+
+describe("review tags (BR-53)", () => {
+  function reviewSetup() {
+    return createBoardStore({
+      ownerId: "owner",
+      year: 2569,
+      tasks: [task({ id: "r", status: "in_progress", position: 1, startedAt: "2026-11-01T00:00:00.000Z" })],
+    });
+  }
+
+  it("names a reviewer only while the task is in review, and clears it when it leaves", () => {
+    const store = reviewSetup();
+    store.getState().setReviewer("r", "reviewer"); // not in review yet: ignored
+    expect(store.getState().tasks.r?.reviewerId).toBeNull();
+
+    store.getState().moveTask("r", "review", 2);
+    store.getState().setReviewer("r", "reviewer");
+    expect(store.getState().tasks.r?.reviewerId).toBe("reviewer");
+    expect(changes(store)).toHaveLength(1);
+
+    store.getState().moveTask("r", "in_progress", 3);
+    expect(store.getState().tasks.r?.reviewerId).toBeNull();
+  });
+
+  it("keeps the reviewer when reordering inside the review column", () => {
+    const store = reviewSetup();
+    store.getState().moveTask("r", "review", 2);
+    store.getState().setReviewer("r", "reviewer");
+    store.getState().moveTask("r", "review", 5);
+    expect(store.getState().tasks.r?.reviewerId).toBe("reviewer");
+  });
+
+  it("the dialog sets the reviewer only for tasks in review", () => {
+    const store = reviewSetup();
+    store.getState().updateTask("r", { ...input, reviewerId: "reviewer" });
+    expect(store.getState().tasks.r?.reviewerId).toBeNull();
+    const id = store.getState().createTask("review", { ...input, reviewerId: "reviewer" });
+    expect(store.getState().tasks[id]?.reviewerId).toBe("reviewer");
   });
 });

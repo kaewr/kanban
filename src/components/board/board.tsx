@@ -7,6 +7,7 @@ import { BoardStoreProvider } from "@/stores/board-store-provider";
 import { BoardToolbar } from "./board-toolbar";
 import { BoardView } from "./board-view";
 import { ForeignBoardBanner } from "./foreign-board-banner";
+import { ReviewInfoProvider, type ReviewPerson } from "./review-context";
 import { TodayBanner } from "./today-banner";
 import { UnsavedGuard } from "./unsaved-guard";
 
@@ -20,6 +21,7 @@ export function Board({
   owner,
   owners,
   todayNotice,
+  people,
 }: {
   ownerId: string;
   data: BoardData;
@@ -28,6 +30,8 @@ export function Board({
   /** Accounts an admin can switch to (FR-11); empty for normal users. */
   owners: BoardOwner[];
   todayNotice: TodayNotice;
+  /** BR-53 reviewer names (everyone with an account). */
+  people: ReviewPerson[];
 }) {
   const isForeign = owner.id !== viewer.id;
   // Links keep pointing at this board: no ?user= for the viewer's own board.
@@ -35,23 +39,25 @@ export function Board({
 
   return (
     <BoardStoreProvider init={{ ownerId, year: data.year, tasks: data.tasks }}>
-      <UnsavedGuard>
-        <div className="flex flex-col gap-4">
-          {isForeign && <ForeignBoardBanner owner={owner} year={data.year} />}
-          <TodayBanner notice={todayNotice} ownerName={isForeign ? owner.displayName : null} />
-          <BoardToolbar
-            year={data.year}
-            years={data.years}
-            yearType={data.yearType}
-            ownerParam={ownerParam}
-            owners={owners}
-            viewer={viewer}
-            ownerId={owner.id}
-          />
-          <BoardView categories={data.categories} years={data.years} titlePresets={data.titlePresets} />
-        </div>
-        <BoardDraft ownerId={ownerId} year={data.year} />
-      </UnsavedGuard>
+      <ReviewInfoProvider ownerId={ownerId} people={people} comments={data.reviewComments}>
+        <UnsavedGuard>
+          <div className="flex flex-col gap-4">
+            {isForeign && <ForeignBoardBanner owner={owner} year={data.year} />}
+            <TodayBanner notice={todayNotice} ownerName={isForeign ? owner.displayName : null} />
+            <BoardToolbar
+              year={data.year}
+              years={data.years}
+              yearType={data.yearType}
+              ownerParam={ownerParam}
+              owners={owners}
+              viewer={viewer}
+              ownerId={owner.id}
+            />
+            <BoardView categories={data.categories} years={data.years} titlePresets={data.titlePresets} />
+          </div>
+          <BoardDraft ownerId={ownerId} year={data.year} />
+        </UnsavedGuard>
+      </ReviewInfoProvider>
     </BoardStoreProvider>
   );
 }

@@ -50,6 +50,7 @@ describe("validateTaskInput (BR-01)", () => {
     progress: null,
     startedAt: null,
     completedAt: null,
+    reviewerId: null,
   };
 
   it("accepts a minimal short_term task", () => {

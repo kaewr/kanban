@@ -8,12 +8,15 @@ import {
   CircleCheckIcon,
   FlagIcon,
   LightbulbIcon,
+  MessageSquareTextIcon,
   MoreHorizontalIcon,
   PencilIcon,
   PlayIcon,
   TagIcon,
   Trash2Icon,
   TriangleAlertIcon,
+  UserCheckIcon,
+  UserRoundXIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +34,7 @@ import { dueLabel, suggestsLongTerm, type DueState } from "@/lib/board/rules";
 import type { BoardTask } from "@/lib/board/types";
 import { cn } from "@/lib/utils";
 import type { TaskStatus } from "@/types/domain";
+import { useReviewInfo } from "./review-context";
 import { PRIORITY_STYLE, STATUS_STYLE } from "./status-style";
 
 const chip = "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset";
@@ -66,6 +70,10 @@ type ContentProps = {
 export function TaskCardContent({ task, categoryName, unsaved, due = null, className, menu, compact = false }: ContentProps) {
   const showProgress = task.status === "long_term" && task.progress !== null;
   const dueStyle = due ? DUE_STYLE[due.kind] : null;
+  const { nameOf, commentOf } = useReviewInfo();
+  const inReview = task.status === "review";
+  const reviewerName = inReview ? nameOf(task.reviewerId) : null;
+  const reviewComment = inReview ? commentOf(task.id) : null;
 
   if (compact) {
     return (
@@ -87,6 +95,16 @@ export function TaskCardContent({ task, categoryName, unsaved, due = null, class
         <p className="line-clamp-2 min-w-0 flex-1 leading-snug font-medium break-words" data-testid="task-title" title={task.title}>
           {task.title}
         </p>
+        {inReview && (
+          <span
+            className={cn("shrink-0", reviewerName ? "text-primary" : "text-muted-foreground")}
+            title={reviewerName ? `รอ ${reviewerName} ตรวจ` : "ยังไม่ระบุผู้ตรวจ"}
+            data-testid="task-reviewer"
+          >
+            {reviewerName ? <UserCheckIcon className="size-3.5" aria-hidden /> : <UserRoundXIcon className="size-3.5" aria-hidden />}
+            <span className="sr-only">{reviewerName ? `รอ ${reviewerName} ตรวจ` : "ยังไม่ระบุผู้ตรวจ"}</span>
+          </span>
+        )}
         {due && dueStyle && (
           <span className={cn("shrink-0", dueStyle.date)} title={dueLabel(due)} data-testid="task-due-state" data-kind={due.kind}>
             <dueStyle.icon className="size-3.5" aria-hidden />
@@ -131,6 +149,20 @@ export function TaskCardContent({ task, categoryName, unsaved, due = null, class
           <span className={cn(chip, dueStyle.chip)} data-testid="task-due-state" data-kind={due.kind}>
             <dueStyle.icon className="size-3" aria-hidden />
             {dueLabel(due)}
+          </span>
+        )}
+        {inReview && (
+          <span
+            className={cn(
+              chip,
+              reviewerName
+                ? "bg-primary/8 text-primary ring-primary/15"
+                : "bg-muted text-muted-foreground ring-foreground/10",
+            )}
+            data-testid="task-reviewer"
+          >
+            {reviewerName ? <UserCheckIcon className="size-3" aria-hidden /> : <UserRoundXIcon className="size-3" aria-hidden />}
+            {reviewerName ? `รอ ${reviewerName} ตรวจ` : "ยังไม่ระบุผู้ตรวจ"}
           </span>
         )}
         {unsaved && (
@@ -202,6 +234,18 @@ export function TaskCardContent({ task, categoryName, unsaved, due = null, class
         >
           <LightbulbIcon className="mt-px size-3.5 shrink-0" aria-hidden />
           กำหนดเสร็จเกิน 30 วัน ลองย้ายไป &ldquo;งานระยะยาว&rdquo;
+        </p>
+      )}
+
+      {reviewComment && (
+        <p
+          className="flex items-start gap-1.5 rounded-lg bg-primary/8 px-2 py-1.5 text-xs text-foreground"
+          data-testid="task-review-comment"
+        >
+          <MessageSquareTextIcon className="mt-px size-3.5 shrink-0 text-primary" aria-hidden />
+          <span className="line-clamp-3">
+            <span className="font-medium">{reviewerName}:</span> {reviewComment}
+          </span>
         </p>
       )}
     </div>

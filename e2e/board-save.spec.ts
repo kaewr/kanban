@@ -9,6 +9,8 @@ import type { Json } from "../src/types/database";
 async function moveWithMenu(page: Page, title: string, to: string) {
   await page.getByRole("button", { name: `ตัวเลือกงาน ${title}` }).click();
   await page.getByRole("menuitem", { name: to }).click();
+  // BR-53: moving into review asks for a reviewer; these tests skip it.
+  if (to === "รอตรวจสอบ") await page.getByRole("dialog", { name: "ส่งให้ใครตรวจ?" }).getByRole("button", { name: "ข้าม" }).click();
 }
 
 async function save(page: Page) {

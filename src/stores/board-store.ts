@@ -19,6 +19,8 @@ export type BoardActions = {
   createTask: (status: TaskStatus, input: TaskInput) => string;
   updateTask: (id: string, input: TaskInput) => void;
   moveTask: (id: string, to: TaskStatus, position: number) => void;
+  /** BR-53: name (or clear) the reviewer of a task in "review". */
+  setReviewer: (id: string, reviewerId: string | null) => void;
   deleteTask: (id: string) => void;
   /**
    * After a successful save: saved rows become the new snapshot (FR-09).
@@ -78,6 +80,7 @@ export function createBoardStore(init: BoardInit) {
         carriedFromYear: null,
         startedAt: input.startedAt,
         completedAt: input.completedAt,
+        reviewerId: status === "review" ? input.reviewerId : null,
         version: 1,
         isDeleted: false,
         createdAt: now,
@@ -106,6 +109,7 @@ export function createBoardStore(init: BoardInit) {
               progress: input.progress,
               startedAt: input.startedAt,
               completedAt: input.completedAt,
+              reviewerId: task.status === "review" ? input.reviewerId : null,
             },
           },
         };
@@ -128,10 +132,19 @@ export function createBoardStore(init: BoardInit) {
               ...statusChangeDates(task, to, movedAt),
               status: to,
               position,
+              reviewerId: to === "review" ? task.reviewerId : null, // BR-53
               moves: [...task.moves, { from: task.status, to, movedAt }],
             },
           },
         };
+      });
+    },
+
+    setReviewer: (id, reviewerId) => {
+      set((s) => {
+        const task = s.tasks[id];
+        if (!task || task.status !== "review") return s;
+        return { tasks: { ...s.tasks, [id]: { ...task, reviewerId } } };
       });
     },
 

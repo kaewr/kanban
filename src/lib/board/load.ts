@@ -13,6 +13,8 @@ export type BoardData = {
   categories: BoardCategory[];
   /** BR-51 names offered in the task dialog. */
   titlePresets: string[];
+  /** BR-54: reviewer comments on open review requests, by task id. */
+  reviewComments: Record<string, string>;
 };
 
 export type BoardOwner = {
@@ -77,6 +79,14 @@ export async function loadBoard(ownerId: string, yearParam: unknown): Promise<Bo
     .order("position");
   if (tasksRes.error) throw new Error("โหลดงานไม่สำเร็จ");
 
+  const reviewsRes = await supabase
+    .from("task_reviews")
+    .select("task_id, comment")
+    .eq("owner_id", ownerId)
+    .eq("status", "open")
+    .not("comment", "is", null);
+  if (reviewsRes.error) throw new Error("โหลดข้อมูลการตรวจงานไม่สำเร็จ");
+
   return {
     year,
     yearType,
@@ -84,5 +94,6 @@ export async function loadBoard(ownerId: string, yearParam: unknown): Promise<Bo
     tasks: tasksRes.data.map(toBoardTask),
     categories: categoriesRes.data.map((c) => ({ id: c.id, name: c.name, isActive: c.is_active })),
     titlePresets: presetsRes.data.map((p) => p.name),
+    reviewComments: Object.fromEntries(reviewsRes.data.map((r) => [r.task_id, r.comment ?? ""])),
   };
 }

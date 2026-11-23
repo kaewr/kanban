@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppNav, type NavItem } from "@/components/app-nav";
 import { BrandMark } from "@/components/brand-mark";
+import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { requireProfile } from "@/lib/auth";
 import { ROUTES } from "@/lib/routes";
@@ -36,6 +37,7 @@ export async function AppHeader() {
     { href: ROUTES.board, label: "บอร์ด", icon: "board" },
     { href: ROUTES.dashboard, label: "Dashboard", icon: "dashboard" },
     { href: ROUTES.leave, label: "วันลา", icon: "leave" },
+    { href: ROUTES.reviews, label: "ตรวจงาน", icon: "reviews" },
   ];
   if (profile.role === "admin") {
     items.push({ href: ROUTES.admin, label: "Admin", icon: "admin" });
@@ -45,6 +47,7 @@ export async function AppHeader() {
     <Shell>
       <AppNav items={items} />
       <ThemeToggle className="ml-auto" />
+      <NotificationBell />
       <Link
         href={ROUTES.profile}
         className="flex min-w-0 items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm transition-colors hover:bg-muted"

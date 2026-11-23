@@ -138,6 +138,75 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: number
+          kind: string
+          message: string | null
+          read_at: string | null
+          review_id: string | null
+          task_id: string | null
+          task_title: string
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          message?: string | null
+          read_at?: string | null
+          review_id?: string | null
+          task_id?: string | null
+          task_title: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          message?: string | null
+          read_at?: string | null
+          review_id?: string | null
+          task_id?: string | null
+          task_title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "task_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -229,6 +298,85 @@ export type Database = {
           },
         ]
       }
+      task_reviews: {
+        Row: {
+          comment: string | null
+          commented_at: string | null
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          owner_id: string
+          requested_at: string
+          requested_by: string
+          reviewer_id: string
+          status: string
+          task_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          comment?: string | null
+          commented_at?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          owner_id: string
+          requested_at?: string
+          requested_by: string
+          reviewer_id: string
+          status?: string
+          task_id: string
+        }
+        Update: {
+          comment?: string | null
+          commented_at?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          owner_id?: string
+          requested_at?: string
+          requested_by?: string
+          reviewer_id?: string
+          status?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_reviews_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reviews_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reviews_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reviews_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_title_presets: {
         Row: {
           created_at: string
@@ -265,6 +413,7 @@ export type Database = {
           position: number
           priority: number
           progress: number | null
+          reviewer_id: string | null
           started_at: string | null
           status: string
           title: string
@@ -286,6 +435,7 @@ export type Database = {
           position?: number
           priority?: number
           progress?: number | null
+          reviewer_id?: string | null
           started_at?: string | null
           status: string
           title: string
@@ -306,6 +456,7 @@ export type Database = {
           position?: number
           priority?: number
           progress?: number | null
+          reviewer_id?: string | null
           started_at?: string | null
           status?: string
           title?: string
@@ -324,6 +475,13 @@ export type Database = {
           {
             foreignKeyName: "tasks_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_reviewer_id_fkey"
+            columns: ["reviewer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -360,6 +518,7 @@ export type Database = {
         Args: { p_owner_id?: string; p_unit_id?: string; p_year: number }
         Returns: Json
       }
+      is_active_profile: { Args: { p_id: string }; Returns: boolean }
       is_active_user: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       leave_summary: {
@@ -372,6 +531,10 @@ export type Database = {
         Returns: Json
       }
       reorder_categories: { Args: { p_ids: string[] }; Returns: undefined }
+      review_decide: {
+        Args: { p_action: string; p_comment?: string; p_review_id: string }
+        Returns: Json
+      }
       save_board_changes: { Args: { p_changes: Json }; Returns: Json }
     }
     Enums: {

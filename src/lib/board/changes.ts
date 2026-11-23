@@ -13,6 +13,7 @@ const PERSISTED_FIELDS = [
   "position",
   "startedAt",
   "completedAt",
+  "reviewerId",
   "isDeleted",
 ] as const satisfies readonly (keyof BoardTask)[];
 

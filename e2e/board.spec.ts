@@ -169,7 +169,12 @@ test.describe("FR-08 drag and drop", () => {
     await page.getByRole("menuitem", { name: "รอตรวจสอบ" }).click();
     await expect(cardByTitle(column(page, "review"), "ย้ายด้วยเมนู")).toBeVisible();
     await expect(card(page, task.id)).toHaveCount(1);
-    await expect(page.getByRole("dialog")).toHaveCount(0); // menu click must not open the editor
+    // The menu click must not open the editor; moving into review asks for a reviewer (BR-53).
+    const picker = page.getByRole("dialog", { name: "ส่งให้ใครตรวจ?" });
+    await expect(picker).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "แก้ไขงาน" })).toHaveCount(0);
+    await picker.getByRole("button", { name: "ข้าม" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 });
 

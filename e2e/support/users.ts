@@ -93,6 +93,15 @@ export async function deleteTestUser(userId: string): Promise<void> {
   const { data: tasks } = await service().from("tasks").select("id").eq("owner_id", userId);
   const taskIds = (tasks ?? []).map((t) => t.id);
   await service().from("leaves").delete().or(`owner_id.eq.${userId},created_by.eq.${userId}`);
+  // BR-53..56: notifications -> review requests -> reviewer on other people's tasks.
+  const reviewFilter = `owner_id.eq.${userId},reviewer_id.eq.${userId},requested_by.eq.${userId},decided_by.eq.${userId}`;
+  const { data: reviews } = await service().from("task_reviews").select("id").or(reviewFilter);
+  const reviewIds = (reviews ?? []).map((r) => r.id);
+  await service().from("notifications").delete().or(`user_id.eq.${userId},actor_id.eq.${userId}`);
+  if (reviewIds.length > 0) await service().from("notifications").delete().in("review_id", reviewIds);
+  if (taskIds.length > 0) await service().from("notifications").delete().in("task_id", taskIds);
+  await service().from("task_reviews").delete().or(reviewFilter);
+  await service().from("tasks").update({ reviewer_id: null }).eq("reviewer_id", userId);
   await service().from("task_history").delete().eq("changed_by", userId);
   if (taskIds.length > 0) {
     await service().from("task_history").delete().in("task_id", taskIds);

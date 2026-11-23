@@ -19,6 +19,8 @@ export type BoardTask = {
   carriedFromYear: number | null;
   startedAt: string | null;
   completedAt: string | null;
+  /** BR-53: who is asked to review; only set while status is "review". */
+  reviewerId: string | null;
   version: number;
   isDeleted: boolean;
   createdAt: string;
@@ -41,4 +43,5 @@ export type TaskInput = {
   progress: number | null;
   startedAt: string | null;
   completedAt: string | null;
+  reviewerId: string | null;
 };

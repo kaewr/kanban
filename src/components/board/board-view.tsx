@@ -39,6 +39,7 @@ import { BoardColumn, COLUMN_ID_PREFIX } from "./board-column";
 import { BoardFilters } from "./board-filters";
 import { DeleteTaskDialog } from "./delete-task-dialog";
 import { TaskCardContent } from "./task-card";
+import { ReviewerPickerDialog } from "./reviewer-picker-dialog";
 import { TaskDialog, type TaskDialogMode } from "./task-dialog";
 import { CardDensityToggle } from "./card-density-toggle";
 import { useCardDensity } from "./use-card-density";
@@ -81,6 +82,8 @@ export function BoardView({
   const [overStatus, setOverStatus] = useState<TaskStatus | null>(null);
   const [dialog, setDialog] = useState<TaskDialogMode | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // BR-53: card just moved into "review" without a reviewer -> ask who reviews it.
+  const [pickingFor, setPickingFor] = useState<string | null>(null);
   const [filter, setFilter] = useState<BoardFilter>(EMPTY_FILTER);
   // Cards shown per column; grows by COLUMN_PAGE_SIZE per "แสดงเพิ่ม". Not remembered.
   const [limits, setLimits] = useState<Partial<Record<TaskStatus, number>>>({});
@@ -180,12 +183,15 @@ export function BoardView({
       if (current[currentIndex - 1]?.position === before && current[currentIndex + 1]?.position === after) return;
     }
     moveTask(task.id, toStatus, positionBetween(before, after));
+    if (toStatus === "review" && task.status !== "review" && !task.reviewerId) setPickingFor(task.id);
   }
 
   /** Card menu "ย้ายไป…": append to the end of the target column. */
   function moveToColumn(id: string, to: TaskStatus) {
     const list = columns[to].filter((t) => t.id !== id);
     moveTask(id, to, positionBetween(list[list.length - 1]?.position, undefined));
+    const task = tasks[id];
+    if (to === "review" && task && task.status !== "review" && !task.reviewerId) setPickingFor(id);
   }
 
   const activeTask = activeId ? tasks[activeId] : undefined;
@@ -274,6 +280,7 @@ export function BoardView({
         titlePresets={titlePresets}
       />
       <DeleteTaskDialog taskId={deletingId} onClose={() => setDeletingId(null)} />
+      <ReviewerPickerDialog taskId={pickingFor} onClose={() => setPickingFor(null)} />
     </>
   );
 }
