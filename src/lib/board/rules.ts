@@ -25,6 +25,17 @@ export function statusChangeDates(
 
 export type TaskInputErrors = Partial<Record<keyof TaskInput, string>>;
 
+/** BR-57: at most a year of minutes (matches the DB check). */
+export const DURATION_MAX = 525_600;
+
+/** e.g. 45 -> "45 นาที", 90 -> "1 ชม. 30 นาที", 120 -> "2 ชม.". */
+export function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} นาที`;
+  return m === 0 ? `${h.toLocaleString("th-TH")} ชม.` : `${h.toLocaleString("th-TH")} ชม. ${m} นาที`;
+}
+
 /** Validates the task dialog. `status` is the column the task is (or will be) in. */
 export function validateTaskInput(input: TaskInput, status: TaskStatus, isNew: boolean): TaskInputErrors {
   const errors: TaskInputErrors = {};
@@ -51,6 +62,16 @@ export function validateTaskInput(input: TaskInput, status: TaskStatus, isNew: b
   }
   if (input.startedAt && input.completedAt && bangkokDate(input.completedAt) < bangkokDate(input.startedAt)) {
     errors.completedAt = "วันเสร็จต้องไม่ก่อนวันเริ่ม";
+  }
+
+  // BR-57: minutes worked; required when creating straight in done.
+  if (status === "done") {
+    const m = input.durationMinutes;
+    if (m === null) {
+      if (isNew) errors.durationMinutes = "กรุณากรอกเวลาที่ใช้ (นาที)";
+    } else if (!Number.isInteger(m) || m < 1 || m > DURATION_MAX) {
+      errors.durationMinutes = `เวลาที่ใช้ต้องเป็นจำนวนเต็ม 1–${DURATION_MAX.toLocaleString("th-TH")} นาที`;
+    }
   }
 
   return errors;

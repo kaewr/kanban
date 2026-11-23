@@ -458,6 +458,33 @@ async function main(): Promise<void> {
     check("reviewer can still read a task they reviewed", (bStill.data ?? []).length === 1);
   }
 
+  // ------------------------------------------------------------------ BR-57 duration
+  console.log("\nDuration minutes (BR-57)");
+  {
+    const id = randomUUID();
+    const item = (op: "create" | "update", status: string, duration: number | null, version = 1) => ({
+      op, id, version, owner_id: a.id, title: "งานเสร็จย้อนหลัง", description: null, status,
+      category_id: category.id, priority: 2, year: YEAR, due_date: null, progress: null, position: 1,
+      started_at: "2026-11-20T02:00:00Z", completed_at: status === "done" ? "2026-11-20T03:00:00Z" : null,
+      reviewer_id: null, duration_minutes: duration,
+      moves: op === "create" ? [{ from: null, to: status, moved_at: new Date().toISOString() }] : [{ from: "done", to: status, moved_at: new Date().toISOString() }],
+    });
+    const missing = await a.client.rpc("save_board_changes", { p_changes: { tasks: [item("create", "done", null)] } });
+    check("creating straight in done needs minutes", missing.error !== null);
+    const bad = await a.client.rpc("save_board_changes", { p_changes: { tasks: [item("create", "done", 0)] } });
+    check("minutes must be at least 1", bad.error !== null);
+    const ok = await a.client.rpc("save_board_changes", { p_changes: { tasks: [item("create", "done", 45)] } });
+    const saved = must(await service.from("tasks").select("duration_minutes, version").eq("id", id).single(), "read") as {
+      duration_minutes: number | null; version: number;
+    };
+    check("creating in done with minutes saves them", ok.error === null && saved.duration_minutes === 45, ok.error?.message);
+    const out = await a.client.rpc("save_board_changes", { p_changes: { tasks: [item("update", "in_progress", 45, saved.version)] } });
+    const after = must(await service.from("tasks").select("duration_minutes").eq("id", id).single(), "read") as {
+      duration_minutes: number | null;
+    };
+    check("leaving done clears the minutes", out.error === null && after.duration_minutes === null, out.error?.message);
+  }
+
   // ------------------------------------------------------------------ inactive
   console.log("\nDeactivated users (session still valid)");
   {

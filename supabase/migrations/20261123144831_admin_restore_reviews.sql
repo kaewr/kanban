@@ -1,5 +1,5 @@
 -- BR-45/46 + BR-53: admin_restore now also restores review requests (task_reviews,
--- same id is skipped), after tasks. tasks.reviewer_id is not restored (stays empty).
+-- same id is skipped), after tasks. Tasks keep duration_minutes (BR-57). tasks.reviewer_id is not restored (stays empty).
 -- Notifications are not backed up (they are transient), and restoring sets
 -- app.restoring so the notify trigger stays quiet. Older files without reviews still restore.
 --
@@ -97,7 +97,7 @@ begin
       else
         insert into public.tasks (id, owner_id, title, description, status, category_id, priority, year,
                                   due_date, progress, position, carried_from_year, started_at, completed_at,
-                                  version, is_deleted, created_at, updated_at)
+                                  version, is_deleted, created_at, updated_at, duration_minutes)
         values ((r ->> 'id')::uuid, (r ->> 'owner_id')::uuid, r ->> 'title', r ->> 'description', r ->> 'status',
                 coalesce(v_map ->> (r ->> 'category_id'), r ->> 'category_id')::uuid,
                 (r ->> 'priority')::smallint, (r ->> 'year')::smallint, (r ->> 'due_date')::date,
@@ -105,7 +105,8 @@ begin
                 (r ->> 'carried_from_year')::smallint, (r ->> 'started_at')::timestamptz,
                 (r ->> 'completed_at')::timestamptz, coalesce((r ->> 'version')::int, 1),
                 coalesce((r ->> 'is_deleted')::boolean, false),
-                coalesce((r ->> 'created_at')::timestamptz, now()), coalesce((r ->> 'updated_at')::timestamptz, now()));
+                coalesce((r ->> 'created_at')::timestamptz, now()), coalesce((r ->> 'updated_at')::timestamptz, now()),
+                (r ->> 'duration_minutes')::integer);
         v_tsk_ins := v_tsk_ins + 1;
       end if;
     exception when others then

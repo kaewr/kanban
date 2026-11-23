@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exceedsWipLimit, statusChangeDates, suggestsLongTerm, validateTaskInput } from "./rules";
+import { exceedsWipLimit, formatDuration, statusChangeDates, suggestsLongTerm, validateTaskInput } from "./rules";
 import type { TaskInput } from "./types";
 
 const NOW = "2026-11-21T03:00:00.000Z";
@@ -51,6 +51,7 @@ describe("validateTaskInput (BR-01)", () => {
     startedAt: null,
     completedAt: null,
     reviewerId: null,
+    durationMinutes: null,
   };
 
   it("accepts a minimal short_term task", () => {
@@ -72,7 +73,7 @@ describe("validateTaskInput (BR-01)", () => {
 
   it("requires a completion date when created in done", () => {
     expect(validateTaskInput({ ...base, startedAt: EARLIER }, "done", true).completedAt).toBeDefined();
-    expect(validateTaskInput({ ...base, startedAt: EARLIER, completedAt: NOW }, "done", true)).toEqual({});
+    expect(validateTaskInput({ ...base, startedAt: EARLIER, completedAt: NOW, durationMinutes: 30 }, "done", true)).toEqual({});
   });
 
   it("rejects completion before start", () => {
@@ -98,5 +99,40 @@ describe("exceedsWipLimit (BR-08)", () => {
   it("warns above 5", () => {
     expect(exceedsWipLimit(5)).toBe(false);
     expect(exceedsWipLimit(6)).toBe(true);
+  });
+});
+
+describe("duration minutes (BR-57)", () => {
+  const done: TaskInput = {
+    title: "งาน",
+    description: "",
+    categoryId: "cat",
+    priority: 2,
+    year: 2569,
+    dueDate: null,
+    progress: null,
+    startedAt: "2026-11-23T02:00:00.000Z",
+    completedAt: "2026-11-23T03:00:00.000Z",
+    reviewerId: null,
+    durationMinutes: null,
+  };
+
+  it("is required only when creating straight in done", () => {
+    expect(validateTaskInput(done, "done", true).durationMinutes).toBe("กรุณากรอกเวลาที่ใช้ (นาที)");
+    expect(validateTaskInput(done, "done", false).durationMinutes).toBeUndefined();
+    expect(validateTaskInput({ ...done, completedAt: null }, "in_progress", true).durationMinutes).toBeUndefined();
+  });
+
+  it("accepts whole minutes in range only", () => {
+    expect(validateTaskInput({ ...done, durationMinutes: 45 }, "done", true)).toEqual({});
+    expect(validateTaskInput({ ...done, durationMinutes: 0 }, "done", true).durationMinutes).toContain("จำนวนเต็ม");
+    expect(validateTaskInput({ ...done, durationMinutes: 1.5 }, "done", true).durationMinutes).toContain("จำนวนเต็ม");
+    expect(validateTaskInput({ ...done, durationMinutes: 525_601 }, "done", true).durationMinutes).toContain("จำนวนเต็ม");
+  });
+
+  it("formats minutes for the card", () => {
+    expect(formatDuration(45)).toBe("45 นาที");
+    expect(formatDuration(90)).toBe("1 ชม. 30 นาที");
+    expect(formatDuration(120)).toBe("2 ชม.");
   });
 });

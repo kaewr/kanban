@@ -407,6 +407,7 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          duration_minutes: number | null
           id: string
           is_deleted: boolean
           owner_id: string
@@ -429,6 +430,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          duration_minutes?: number | null
           id?: string
           is_deleted?: boolean
           owner_id: string
@@ -450,6 +452,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          duration_minutes?: number | null
           id?: string
           is_deleted?: boolean
           owner_id?: string

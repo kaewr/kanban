@@ -13,6 +13,7 @@ import {
   PencilIcon,
   PlayIcon,
   TagIcon,
+  TimerIcon,
   Trash2Icon,
   TriangleAlertIcon,
   UserCheckIcon,
@@ -30,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BOARD_COLUMNS, PRIORITY_LABEL } from "@/lib/board/constants";
 import { formatThaiDate } from "@/lib/board/dates";
-import { dueLabel, suggestsLongTerm, type DueState } from "@/lib/board/rules";
+import { dueLabel, formatDuration, suggestsLongTerm, type DueState } from "@/lib/board/rules";
 import type { BoardTask } from "@/lib/board/types";
 import { cn } from "@/lib/utils";
 import type { TaskStatus } from "@/types/domain";
@@ -222,6 +223,15 @@ export function TaskCardContent({ task, categoryName, unsaved, due = null, class
                 <span className="sr-only">เสร็จ</span>
               </dt>
               <dd data-testid="task-completed">{formatThaiDate(task.completedAt)}</dd>
+            </div>
+          )}
+          {task.durationMinutes !== null && (
+            <div className="flex items-center gap-1" title="เวลาที่ใช้">
+              <dt>
+                <TimerIcon className="size-3.5" aria-hidden />
+                <span className="sr-only">ใช้เวลา</span>
+              </dt>
+              <dd data-testid="task-duration">{formatDuration(task.durationMinutes)}</dd>
             </div>
           )}
         </dl>

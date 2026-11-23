@@ -20,6 +20,7 @@ export function toBoardTask(row: Tables<"tasks">): BoardTask {
     startedAt: row.started_at,
     completedAt: row.completed_at,
     reviewerId: row.reviewer_id,
+    durationMinutes: row.duration_minutes,
     version: row.version,
     isDeleted: row.is_deleted,
     createdAt: row.created_at,

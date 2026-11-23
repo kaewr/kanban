@@ -24,6 +24,7 @@ export type SaveItem =
       started_at: string | null;
       completed_at: string | null;
       reviewer_id: string | null;
+      duration_minutes: number | null;
       moves: MovePayload[];
     };
 
@@ -52,6 +53,7 @@ export function buildSavePayload(changed: readonly BoardTask[]): SavePayload {
         started_at: task.startedAt,
         completed_at: task.completedAt,
         reviewer_id: task.reviewerId,
+        duration_minutes: task.durationMinutes,
         moves: task.moves.map((m) => ({ from: m.from, to: m.to, moved_at: m.movedAt })),
       };
     }),

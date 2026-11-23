@@ -18,6 +18,7 @@ const base: BoardTask = {
   startedAt: "2026-11-21T03:00:00.000Z",
   completedAt: null,
   reviewerId: null,
+  durationMinutes: null,
   version: 3,
   isDeleted: false,
   createdAt: "2026-11-01T00:00:00.000Z",

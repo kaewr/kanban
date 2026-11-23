@@ -10,6 +10,7 @@ import {
   unsavedCount,
 } from "./support/board";
 import { currentYear, firstCategory, seedTasks, tasksOf } from "./support/tasks";
+import { service } from "./support/users";
 
 test.describe("FR-07 / FR-12 board and years", () => {
   test("shows five columns with only the owner's tasks of the selected year", async ({ page, makeUser }) => {
@@ -88,10 +89,28 @@ test.describe("FR-07 create / edit / delete", () => {
     await expect(dialog.getByText("วันเสร็จต้องไม่ก่อนวันเริ่ม")).toBeVisible();
 
     await completed.fill("2026-11-05");
+    // BR-57: minutes worked are required when creating straight in done.
+    await dialog.getByRole("button", { name: "เพิ่มงาน" }).click();
+    await expect(dialog.getByText("กรุณากรอกเวลาที่ใช้ (นาที)")).toBeVisible();
+    await dialog.getByLabel("ใช้เวลา (นาที)").fill("90");
     await dialog.getByRole("button", { name: "เพิ่มงาน" }).click();
     const created = cardByTitle(column(page, "done"), "บันทึกย้อนหลัง");
     await expect(created.getByTestId("task-started")).toHaveText("2 พ.ย. 2569");
     await expect(created.getByTestId("task-completed")).toHaveText("5 พ.ย. 2569");
+    await expect(created.getByTestId("task-duration")).toHaveText("1 ชม. 30 นาที");
+
+    await page.getByRole("button", { name: "บันทึก", exact: true }).click();
+    await expect(page.getByTestId("unsaved-count")).toHaveText("บันทึกแล้ว");
+    const { data } = await service().from("tasks").select("duration_minutes").eq("owner_id", user.id).single();
+    expect(data?.duration_minutes).toBe(90);
+
+    // Optional afterwards: edit it, or clear it.
+    await created.click();
+    const edit = page.getByRole("dialog");
+    await expect(edit.getByLabel("ใช้เวลา (นาที) ไม่บังคับ")).toHaveValue("90");
+    await edit.getByLabel("ใช้เวลา (นาที) ไม่บังคับ").fill("");
+    await edit.getByRole("button", { name: "ตกลง" }).click();
+    await expect(created.getByTestId("task-duration")).toHaveCount(0);
   });
 
   test("edits a task by clicking the card", async ({ page, makeUser }) => {

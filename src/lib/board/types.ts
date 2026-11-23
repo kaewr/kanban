@@ -21,6 +21,8 @@ export type BoardTask = {
   completedAt: string | null;
   /** BR-53: who is asked to review; only set while status is "review". */
   reviewerId: string | null;
+  /** BR-57: minutes worked, only while status is "done". */
+  durationMinutes: number | null;
   version: number;
   isDeleted: boolean;
   createdAt: string;
@@ -44,4 +46,5 @@ export type TaskInput = {
   startedAt: string | null;
   completedAt: string | null;
   reviewerId: string | null;
+  durationMinutes: number | null;
 };

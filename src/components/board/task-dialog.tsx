@@ -17,7 +17,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { PRIORITY_LABEL, STATUSES_REQUIRING_START, STATUS_LABEL, TITLE_MAX } from "@/lib/board/constants";
 import { bangkokDate, dateInputToTimestamp } from "@/lib/board/dates";
-import { validateTaskInput, type TaskInputErrors } from "@/lib/board/rules";
+import { DURATION_MAX, validateTaskInput, type TaskInputErrors } from "@/lib/board/rules";
 import type { BoardCategory, BoardTask, TaskInput } from "@/lib/board/types";
 import { useBoardStore } from "@/stores/board-store-provider";
 import { ReviewerSelect } from "./reviewer-select";
@@ -99,6 +99,7 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
     const started = text("startedAt");
     const completed = text("completedAt");
     const progress = text("progress");
+    const duration = text("durationMinutes").trim();
 
     const input: TaskInput = {
       title: text("title"),
@@ -111,6 +112,7 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
       startedAt: started ? dateInputToTimestamp(started, task?.startedAt ?? openedAt) : null,
       completedAt: completed ? dateInputToTimestamp(completed, task?.completedAt ?? openedAt) : null,
       reviewerId: status === "review" ? text("reviewerId") || null : null,
+      durationMinutes: status === "done" && duration !== "" ? Number(duration) : null,
     };
 
     const found = validateTaskInput(input, status, isNew);
@@ -266,6 +268,28 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
               defaultValue={task?.completedAt ? bangkokDate(task.completedAt) : status === "done" ? today : ""}
               aria-invalid={Boolean(errors.completedAt)}
               aria-describedby={errors.completedAt ? "task-completed-error" : undefined}
+            />
+          </Field>
+        )}
+
+        {status === "done" && (
+          <Field
+            id="task-duration"
+            label={isNew ? "ใช้เวลา (นาที)" : "ใช้เวลา (นาที) ไม่บังคับ"}
+            error={errors.durationMinutes}
+          >
+            <Input
+              id="task-duration"
+              name="durationMinutes"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={DURATION_MAX}
+              step={1}
+              placeholder="เช่น 45"
+              defaultValue={task?.durationMinutes ?? ""}
+              aria-invalid={Boolean(errors.durationMinutes)}
+              aria-describedby={errors.durationMinutes ? "task-duration-error" : undefined}
             />
           </Field>
         )}

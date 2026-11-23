@@ -81,6 +81,7 @@ export function createBoardStore(init: BoardInit) {
         startedAt: input.startedAt,
         completedAt: input.completedAt,
         reviewerId: status === "review" ? input.reviewerId : null,
+        durationMinutes: status === "done" ? input.durationMinutes : null,
         version: 1,
         isDeleted: false,
         createdAt: now,
@@ -110,6 +111,7 @@ export function createBoardStore(init: BoardInit) {
               startedAt: input.startedAt,
               completedAt: input.completedAt,
               reviewerId: task.status === "review" ? input.reviewerId : null,
+              durationMinutes: task.status === "done" ? input.durationMinutes : null,
             },
           },
         };
@@ -133,6 +135,7 @@ export function createBoardStore(init: BoardInit) {
               status: to,
               position,
               reviewerId: to === "review" ? task.reviewerId : null, // BR-53
+              durationMinutes: null, // BR-57: cleared on any column change, like completed_at
               moves: [...task.moves, { from: task.status, to, movedAt }],
             },
           },

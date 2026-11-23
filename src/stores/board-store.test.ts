@@ -17,6 +17,7 @@ function task(partial: Partial<BoardTask> & Pick<BoardTask, "id" | "status" | "p
     startedAt: null,
     completedAt: null,
     reviewerId: null,
+    durationMinutes: null,
     version: 1,
     isDeleted: false,
     createdAt: "2026-11-01T00:00:00.000Z",
@@ -37,6 +38,7 @@ const input: TaskInput = {
   startedAt: null,
   completedAt: null,
   reviewerId: null,
+  durationMinutes: null,
 };
 
 function setup() {
@@ -204,5 +206,24 @@ describe("review tags (BR-53)", () => {
     expect(store.getState().tasks.r?.reviewerId).toBeNull();
     const id = store.getState().createTask("review", { ...input, reviewerId: "reviewer" });
     expect(store.getState().tasks[id]?.reviewerId).toBe("reviewer");
+  });
+});
+
+describe("duration minutes (BR-57)", () => {
+  it("is kept only for done tasks and cleared when a task leaves done", () => {
+    const store = createBoardStore({ ownerId: "owner", year: 2569, tasks: [] });
+    const id = store.getState().createTask("done", {
+      ...input,
+      startedAt: "2026-11-23T02:00:00.000Z",
+      completedAt: "2026-11-23T03:00:00.000Z",
+      durationMinutes: 45,
+    });
+    expect(store.getState().tasks[id]?.durationMinutes).toBe(45);
+    store.getState().moveTask(id, "done", 9); // reorder inside done keeps it
+    expect(store.getState().tasks[id]?.durationMinutes).toBe(45);
+    store.getState().moveTask(id, "in_progress", 1);
+    expect(store.getState().tasks[id]?.durationMinutes).toBeNull();
+    const other = store.getState().createTask("short_term", { ...input, durationMinutes: 30 });
+    expect(store.getState().tasks[other]?.durationMinutes).toBeNull();
   });
 });
