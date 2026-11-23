@@ -98,6 +98,7 @@ docs/requirements.md     # สเปก
 - หัวข้องาน (FR-26, BR-51): ตาราง `task_title_presets` (ทุกคนอ่าน admin เขียน, ลบจริงได้) จัดการที่ `/admin/task-titles` ผ่าน Server Action / โหลดมากับ `loadBoard()` เป็น `titlePresets` / dropdown ใน `TaskDialog` แค่คัดลอกชื่อไปที่ `tasks.title` (ไม่มี FK) / BR-52 งานใหม่ default `dueDate` = วันนี้ ยกเว้น `long_term`
 - ตรวจงาน (FR-27, BR-53..56): `tasks.reviewer_id` มีค่าเฉพาะใน `review` (store ล้างเมื่อย้ายออก, `save_board_changes` บังคับซ้ำและสร้าง/ยกเลิก `task_reviews`) / ผู้ตรวจตัดสินที่ `/reviews` ผ่าน `review_decide()` / รายชื่อผู้ตรวจโหลดด้วย service role ใน `src/lib/people.ts` (id + ชื่อ + สังกัด) ส่งผ่าน `ReviewInfoProvider` / แจ้งเตือนสร้างโดย trigger เท่านั้น กระดิ่ง `NotificationBell` ดึงผ่าน server action `loadNotifications()` / backup รวม `task_reviews` (ไม่รวม notifications) restore ตั้ง `app.restoring` กันแจ้งเตือน / ลบ test user ต้องลบ notifications → task_reviews ก่อน (`e2e/support/users.ts`)
 - เวลาที่ใช้ (FR-28, BR-57): `tasks.duration_minutes` มีค่าเฉพาะ `done` (store ล้างเมื่อเปลี่ยนคอลัมน์, `save_board_changes` บังคับซ้ำ และบังคับกรอกเมื่อ create ลง done) / `formatDuration()` ใน `src/lib/board/rules.ts` / สถิติเวลาในอนาคตใช้ค่านี้ก่อน `completed_at − started_at`
+- การ์ดและเวลา (FR-29, BR-58): บรรทัดรายละเอียด `truncate` / เวลาแสดงด้วย `formatThaiDateTime()`, ช่องในหน้าต่างเป็น `datetime-local` ผ่าน `toDateTimeInput()` / `dateTimeInputToTimestamp()` (เวลาไทย) / ประวัติการย้ายโหลดใน `loadBoard()` (join tasks ด้วย `!inner`) เก็บใน store `history` และต่อท้ายด้วย moves ที่บันทึกแล้วใน `applySaved` / `arrivedAt()`, `movesOf()` ใน `src/lib/board/history.ts`
 - การ์ดกะทัดรัด (FR-25, BR-50): `useCardDensity()` เก็บใน localStorage `kanban:card-density` (ค่าเริ่มต้นตอน SSR = ปกติ) ส่ง `compact` ไปที่ `TaskCardContent`
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
@@ -136,4 +137,4 @@ docs/requirements.md     # สเปก
 - [x] วันลา (FR-22)
 - [x] สำรอง/กู้คืนข้อมูล (FR-23)
 - [x] แถบวันนี้ลา/วันหยุด + ปฏิทินวันลา + วันหยุดราชการ (FR-24) + การ์ดกะทัดรัด (FR-25) + หัวข้องานสำเร็จรูป / กำหนดเสร็จเริ่มต้นวันนี้ (FR-26)
-- [x] Tag ผู้ตรวจ + หน้าตรวจงาน + แจ้งเตือนในระบบ (FR-27) + เวลาที่ใช้เป็นนาที (FR-28)
+- [x] Tag ผู้ตรวจ + หน้าตรวจงาน + แจ้งเตือนในระบบ (FR-27) + เวลาที่ใช้เป็นนาที (FR-28) + รายละเอียด/วันเวลาบนการ์ด (FR-29)

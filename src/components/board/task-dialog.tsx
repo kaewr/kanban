@@ -16,9 +16,10 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { PRIORITY_LABEL, STATUSES_REQUIRING_START, STATUS_LABEL, TITLE_MAX } from "@/lib/board/constants";
-import { bangkokDate, dateInputToTimestamp } from "@/lib/board/dates";
+import { bangkokDate, dateTimeInputToTimestamp, formatThaiDateTime, toDateTimeInput } from "@/lib/board/dates";
+import { movesOf } from "@/lib/board/history";
 import { DURATION_MAX, validateTaskInput, type TaskInputErrors } from "@/lib/board/rules";
-import type { BoardCategory, BoardTask, TaskInput } from "@/lib/board/types";
+import type { BoardCategory, BoardTask, TaskInput, TaskMove } from "@/lib/board/types";
 import { useBoardStore } from "@/stores/board-store-provider";
 import { ReviewerSelect } from "./reviewer-select";
 import type { TaskPriority, TaskStatus } from "@/types/domain";
@@ -81,6 +82,8 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
 
   const isNew = !task;
   const today = bangkokDate(openedAt);
+  const now = toDateTimeInput(openedAt);
+  const savedHistory = useBoardStore((s) => (task ? s.history[task.id] : undefined));
   const needsStart = STATUSES_REQUIRING_START.includes(status);
   const showStart = needsStart || Boolean(task?.startedAt);
   const showCompleted = status === "done" || Boolean(task?.completedAt);
@@ -109,8 +112,8 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
       year: Number(text("year")),
       dueDate: text("dueDate") || null,
       progress: showProgress && progress !== "" ? Number(progress) : (task?.progress ?? null),
-      startedAt: started ? dateInputToTimestamp(started, task?.startedAt ?? openedAt) : null,
-      completedAt: completed ? dateInputToTimestamp(completed, task?.completedAt ?? openedAt) : null,
+      startedAt: started ? dateTimeInputToTimestamp(started, task?.startedAt ?? openedAt) : null,
+      completedAt: completed ? dateTimeInputToTimestamp(completed, task?.completedAt ?? openedAt) : null,
       reviewerId: status === "review" ? text("reviewerId") || null : null,
       durationMinutes: status === "done" && duration !== "" ? Number(duration) : null,
     };
@@ -247,12 +250,12 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
         )}
 
         {showStart && (
-          <Field id="task-started" label={needsStart && isNew ? "วันเริ่มจริง" : "วันเริ่ม"} error={errors.startedAt}>
+          <Field id="task-started" label={needsStart && isNew ? "วันเวลาเริ่มจริง" : "วันเวลาเริ่ม"} error={errors.startedAt}>
             <Input
               id="task-started"
               name="startedAt"
-              type="date"
-              defaultValue={task?.startedAt ? bangkokDate(task.startedAt) : needsStart ? today : ""}
+              type="datetime-local"
+              defaultValue={task?.startedAt ? toDateTimeInput(task.startedAt) : needsStart ? now : ""}
               aria-invalid={Boolean(errors.startedAt)}
               aria-describedby={errors.startedAt ? "task-started-error" : undefined}
             />
@@ -260,12 +263,12 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
         )}
 
         {showCompleted && (
-          <Field id="task-completed" label={isNew ? "วันเสร็จจริง" : "วันเสร็จ"} error={errors.completedAt}>
+          <Field id="task-completed" label={isNew ? "วันเวลาเสร็จจริง" : "วันเวลาเสร็จ"} error={errors.completedAt}>
             <Input
               id="task-completed"
               name="completedAt"
-              type="date"
-              defaultValue={task?.completedAt ? bangkokDate(task.completedAt) : status === "done" ? today : ""}
+              type="datetime-local"
+              defaultValue={task?.completedAt ? toDateTimeInput(task.completedAt) : status === "done" ? now : ""}
               aria-invalid={Boolean(errors.completedAt)}
               aria-describedby={errors.completedAt ? "task-completed-error" : undefined}
             />
@@ -299,6 +302,8 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
         <p className="text-xs text-muted-foreground">งานนี้จะไปอยู่ในบอร์ดปี {year}</p>
       )}
 
+      {task && <MoveHistory task={task} saved={savedHistory} />}
+
       <DialogFooter>
         <DialogClose render={<Button type="button" variant="outline" />}>ยกเลิก</DialogClose>
         <Button type="submit">{isNew ? "เพิ่มงาน" : "ตกลง"}</Button>
@@ -317,6 +322,27 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+/** BR-58: when the task was created and every column change, oldest first. */
+function MoveHistory({ task, saved }: { task: BoardTask; saved: TaskMove[] | undefined }) {
+  const moves = movesOf(task, saved);
+  if (moves.length === 0) return null;
+  const unsavedFrom = moves.length - task.moves.length;
+  return (
+    <div className="flex flex-col gap-1.5 rounded-lg bg-muted/50 px-3 py-2">
+      <p className="text-xs font-medium text-muted-foreground">ประวัติการย้าย</p>
+      <ol className="flex flex-col gap-1 text-xs tabular-nums" data-testid="task-history">
+        {moves.map((m, i) => (
+          <li key={`${m.movedAt}-${i}`} className="flex flex-wrap gap-x-2">
+            <span className="text-muted-foreground">{formatThaiDateTime(m.movedAt)}</span>
+            <span>{m.from === null ? `สร้างใน "${STATUS_LABEL[m.to]}"` : `→ "${STATUS_LABEL[m.to]}"`}</span>
+            {i >= unsavedFrom && <span className="text-brand-gold">(ยังไม่บันทึก)</span>}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

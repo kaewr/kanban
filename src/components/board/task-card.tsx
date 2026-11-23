@@ -6,12 +6,14 @@ import {
   AlarmClockIcon,
   CalendarClockIcon,
   CircleCheckIcon,
+  CornerDownRightIcon,
   FlagIcon,
   LightbulbIcon,
   MessageSquareTextIcon,
   MoreHorizontalIcon,
   PencilIcon,
   PlayIcon,
+  PlusCircleIcon,
   TagIcon,
   TimerIcon,
   Trash2Icon,
@@ -30,10 +32,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BOARD_COLUMNS, PRIORITY_LABEL } from "@/lib/board/constants";
-import { formatThaiDate } from "@/lib/board/dates";
+import { formatThaiDate, formatThaiDateTime } from "@/lib/board/dates";
+import { arrivedAt } from "@/lib/board/history";
 import { dueLabel, formatDuration, suggestsLongTerm, type DueState } from "@/lib/board/rules";
 import type { BoardTask } from "@/lib/board/types";
 import { cn } from "@/lib/utils";
+import { useBoardStore } from "@/stores/board-store-provider";
 import type { TaskStatus } from "@/types/domain";
 import { useReviewInfo } from "./review-context";
 import { PRIORITY_STYLE, STATUS_STYLE } from "./status-style";
@@ -75,6 +79,8 @@ export function TaskCardContent({ task, categoryName, unsaved, due = null, class
   const inReview = task.status === "review";
   const reviewerName = inReview ? nameOf(task.reviewerId) : null;
   const reviewComment = inReview ? commentOf(task.id) : null;
+  const savedHistory = useBoardStore((s) => s.history[task.id]);
+  const arrived = arrivedAt(task, savedHistory);
 
   if (compact) {
     return (
@@ -137,6 +143,13 @@ export function TaskCardContent({ task, categoryName, unsaved, due = null, class
         {menu}
       </div>
 
+      {/* BR-58: first line of the description, to tell similar cards apart. */}
+      {task.description && (
+        <p className="-mt-1.5 truncate text-xs text-muted-foreground" title={task.description} data-testid="task-description">
+          {task.description}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center gap-1.5">
         <span className={cn(chip, PRIORITY_STYLE[task.priority])}>
           <FlagIcon className="size-3" aria-hidden />
@@ -196,46 +209,41 @@ export function TaskCardContent({ task, categoryName, unsaved, due = null, class
         </div>
       )}
 
-      {(task.dueDate || task.startedAt || task.completedAt) && (
-        <dl className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-dashed pt-2 text-xs text-muted-foreground tabular-nums">
-          {task.dueDate && (
-            <div className={cn("flex items-center gap-1", dueStyle?.date)} title="กำหนดเสร็จ">
-              <dt>
-                <CalendarClockIcon className="size-3.5" aria-hidden />
-                <span className="sr-only">กำหนด</span>
-              </dt>
-              <dd data-testid="task-due">{formatThaiDate(task.dueDate)}</dd>
-            </div>
-          )}
-          {task.startedAt && (
-            <div className="flex items-center gap-1" title="วันเริ่ม">
-              <dt>
-                <PlayIcon className="size-3.5" aria-hidden />
-                <span className="sr-only">เริ่ม</span>
-              </dt>
-              <dd data-testid="task-started">{formatThaiDate(task.startedAt)}</dd>
-            </div>
-          )}
-          {task.completedAt && (
-            <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400" title="วันเสร็จ">
-              <dt>
-                <CircleCheckIcon className="size-3.5" aria-hidden />
-                <span className="sr-only">เสร็จ</span>
-              </dt>
-              <dd data-testid="task-completed">{formatThaiDate(task.completedAt)}</dd>
-            </div>
-          )}
-          {task.durationMinutes !== null && (
-            <div className="flex items-center gap-1" title="เวลาที่ใช้">
-              <dt>
-                <TimerIcon className="size-3.5" aria-hidden />
-                <span className="sr-only">ใช้เวลา</span>
-              </dt>
-              <dd data-testid="task-duration">{formatDuration(task.durationMinutes)}</dd>
-            </div>
-          )}
-        </dl>
-      )}
+      {/* BR-58: dates with time; created, arrived in this column, started, finished. */}
+      <dl className="flex flex-col gap-1 border-t border-dashed pt-2 text-xs text-muted-foreground tabular-nums">
+        {task.dueDate && (
+          <div className={cn("flex items-center gap-1.5", dueStyle?.date)} title="กำหนดเสร็จ">
+            <dt className="flex items-center gap-1">
+              <CalendarClockIcon className="size-3.5" aria-hidden />
+              <span className="sr-only">กำหนด</span>
+            </dt>
+            <dd data-testid="task-due">{formatThaiDate(task.dueDate)}</dd>
+          </div>
+        )}
+        <TimeRow icon={PlusCircleIcon} label="สร้าง" testId="task-created" value={task.createdAt} />
+        {arrived && task.status !== "done" && (
+          <TimeRow icon={CornerDownRightIcon} label="ย้ายมา" testId="task-arrived" value={arrived} />
+        )}
+        {task.startedAt && <TimeRow icon={PlayIcon} label="เริ่ม" testId="task-started" value={task.startedAt} />}
+        {task.completedAt && (
+          <TimeRow
+            icon={CircleCheckIcon}
+            label="เสร็จ"
+            testId="task-completed"
+            value={task.completedAt}
+            className="text-emerald-700 dark:text-emerald-400"
+          />
+        )}
+        {task.durationMinutes !== null && (
+          <div className="flex items-center gap-1.5" title="เวลาที่ใช้">
+            <dt className="flex items-center gap-1">
+              <TimerIcon className="size-3.5" aria-hidden />
+              <span className="sr-only">ใช้เวลา</span>
+            </dt>
+            <dd data-testid="task-duration">{formatDuration(task.durationMinutes)}</dd>
+          </div>
+        )}
+      </dl>
 
       {suggestsLongTerm(task) && (
         <p
@@ -342,5 +350,29 @@ export function SortableTaskCard({ task, categoryName, unsaved, due, onEdit, onD
         className="cursor-grab hover:-translate-y-px hover:shadow-md hover:ring-primary/25 active:cursor-grabbing"
       />
     </li>
+  );
+}
+
+function TimeRow({
+  icon: Icon,
+  label,
+  value,
+  testId,
+  className,
+}: {
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  label: string;
+  value: string;
+  testId: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex items-center gap-1.5", className)} title={label}>
+      <dt className="flex items-center gap-1">
+        <Icon className="size-3.5" aria-hidden />
+        <span>{label}</span>
+      </dt>
+      <dd data-testid={testId}>{formatThaiDateTime(value)}</dd>
+    </div>
   );
 }

@@ -55,13 +55,13 @@ export function validateTaskInput(input: TaskInput, status: TaskStatus, isNew: b
 
   // BR-01: creating in in_progress/review/done needs a start date; done also an end date.
   if (isNew && STATUSES_REQUIRING_START.includes(status) && !input.startedAt) {
-    errors.startedAt = "กรุณากรอกวันเริ่มจริง";
+    errors.startedAt = "กรุณากรอกวันเวลาเริ่มจริง";
   }
   if (isNew && status === "done" && !input.completedAt) {
-    errors.completedAt = "กรุณากรอกวันเสร็จจริง";
+    errors.completedAt = "กรุณากรอกวันเวลาเสร็จจริง";
   }
-  if (input.startedAt && input.completedAt && bangkokDate(input.completedAt) < bangkokDate(input.startedAt)) {
-    errors.completedAt = "วันเสร็จต้องไม่ก่อนวันเริ่ม";
+  if (input.startedAt && input.completedAt && Date.parse(input.completedAt) < Date.parse(input.startedAt)) {
+    errors.completedAt = "วันเวลาเสร็จต้องไม่ก่อนวันเวลาเริ่ม";
   }
 
   // BR-57: minutes worked; required when creating straight in done.

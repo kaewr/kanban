@@ -50,7 +50,7 @@ test.describe("FR-07 create / edit / delete", () => {
 
     await page.getByRole("button", { name: "เพิ่มงานใน งานค้างระยะสั้น" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByLabel("วันเริ่มจริง")).toHaveCount(0); // BR-01 only for later columns
+    await expect(dialog.getByLabel("วันเวลาเริ่มจริง")).toHaveCount(0); // BR-01 only for later columns
     await dialog.getByLabel("ชื่องาน").fill("งานใหม่จากหน้าเว็บ");
     await dialog.getByLabel("หมวดหมู่").selectOption(category.id);
     await dialog.getByLabel("ความสำคัญ").selectOption("1");
@@ -72,8 +72,8 @@ test.describe("FR-07 create / edit / delete", () => {
 
     await page.getByRole("button", { name: "เพิ่มงานใน เสร็จแล้ว" }).click();
     const dialog = page.getByRole("dialog");
-    const started = dialog.getByLabel("วันเริ่มจริง");
-    const completed = dialog.getByLabel("วันเสร็จจริง");
+    const started = dialog.getByLabel("วันเวลาเริ่มจริง");
+    const completed = dialog.getByLabel("วันเวลาเสร็จจริง");
     await expect(started).not.toHaveValue("");
     await expect(completed).not.toHaveValue("");
 
@@ -81,22 +81,23 @@ test.describe("FR-07 create / edit / delete", () => {
     await dialog.getByLabel("หมวดหมู่").selectOption(category.id);
     await started.fill("");
     await dialog.getByRole("button", { name: "เพิ่มงาน" }).click();
-    await expect(dialog.getByText("กรุณากรอกวันเริ่มจริง")).toBeVisible();
+    await expect(dialog.getByText("กรุณากรอกวันเวลาเริ่มจริง")).toBeVisible();
 
-    await started.fill("2026-11-02");
-    await completed.fill("2026-11-01");
+    // BR-58: same day, but finishing before starting is still rejected.
+    await started.fill("2026-11-02T09:30");
+    await completed.fill("2026-11-02T08:00");
     await dialog.getByRole("button", { name: "เพิ่มงาน" }).click();
-    await expect(dialog.getByText("วันเสร็จต้องไม่ก่อนวันเริ่ม")).toBeVisible();
+    await expect(dialog.getByText("วันเวลาเสร็จต้องไม่ก่อนวันเวลาเริ่ม")).toBeVisible();
 
-    await completed.fill("2026-11-05");
+    await completed.fill("2026-11-05T16:45");
     // BR-57: minutes worked are required when creating straight in done.
     await dialog.getByRole("button", { name: "เพิ่มงาน" }).click();
     await expect(dialog.getByText("กรุณากรอกเวลาที่ใช้ (นาที)")).toBeVisible();
     await dialog.getByLabel("ใช้เวลา (นาที)").fill("90");
     await dialog.getByRole("button", { name: "เพิ่มงาน" }).click();
     const created = cardByTitle(column(page, "done"), "บันทึกย้อนหลัง");
-    await expect(created.getByTestId("task-started")).toHaveText("2 พ.ย. 2569");
-    await expect(created.getByTestId("task-completed")).toHaveText("5 พ.ย. 2569");
+    await expect(created.getByTestId("task-started")).toHaveText("2 พ.ย. 2569 09:30");
+    await expect(created.getByTestId("task-completed")).toHaveText("5 พ.ย. 2569 16:45");
     await expect(created.getByTestId("task-duration")).toHaveText("1 ชม. 30 นาที");
 
     await page.getByRole("button", { name: "บันทึก", exact: true }).click();

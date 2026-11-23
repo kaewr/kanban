@@ -4,7 +4,7 @@
 import { createStore } from "zustand/vanilla";
 import { positionAtEnd } from "@/lib/board/position";
 import { statusChangeDates } from "@/lib/board/rules";
-import type { BoardTask, TaskInput } from "@/lib/board/types";
+import type { BoardTask, TaskInput, TaskMove } from "@/lib/board/types";
 import type { TaskStatus } from "@/types/domain";
 
 export type BoardState = {
@@ -13,6 +13,8 @@ export type BoardState = {
   tasks: Record<string, BoardTask>;
   /** Tasks as loaded from the database; diffed against `tasks` for FR-09. */
   snapshot: Record<string, BoardTask>;
+  /** BR-58: saved column history per task (oldest first); unsaved moves live on the task. */
+  history: Record<string, TaskMove[]>;
 };
 
 export type BoardActions = {
@@ -41,7 +43,7 @@ export type BoardActions = {
 
 export type BoardStore = BoardState & BoardActions;
 
-export type BoardInit = { ownerId: string; year: number; tasks: BoardTask[] };
+export type BoardInit = { ownerId: string; year: number; tasks: BoardTask[]; history?: Record<string, TaskMove[]> };
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -61,6 +63,7 @@ export function createBoardStore(init: BoardInit) {
     year: init.year,
     tasks: byId,
     snapshot: byId,
+    history: init.history ?? {},
 
     createTask: (status, input) => {
       const id = crypto.randomUUID();
@@ -169,7 +172,12 @@ export function createBoardStore(init: BoardInit) {
       set((s) => {
         const tasks = { ...s.tasks };
         const snapshot = { ...s.snapshot };
+        const history = { ...s.history };
         const sentById = new Map(sent.map((t) => [t.id, t]));
+        // The moves just saved are now part of the task's history (BR-58).
+        for (const t of sent) {
+          if (t.moves.length > 0) history[t.id] = [...(history[t.id] ?? []), ...t.moves];
+        }
         for (const row of rows) {
           const local = tasks[row.id];
           const sentTask = sentById.get(row.id);
@@ -192,7 +200,7 @@ export function createBoardStore(init: BoardInit) {
                 }
               : row;
         }
-        return { tasks, snapshot };
+        return { tasks, snapshot, history };
       });
     },
 
@@ -223,7 +231,7 @@ export function createBoardStore(init: BoardInit) {
       });
     },
 
-    clearAll: () => set({ tasks: {}, snapshot: {} }),
+    clearAll: () => set({ tasks: {}, snapshot: {}, history: {} }),
   }));
 }
 

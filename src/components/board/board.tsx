@@ -38,7 +38,7 @@ export function Board({
   const ownerParam = isForeign ? owner.username : undefined;
 
   return (
-    <BoardStoreProvider init={{ ownerId, year: data.year, tasks: data.tasks }}>
+    <BoardStoreProvider init={{ ownerId, year: data.year, tasks: data.tasks, history: data.history }}>
       <ReviewInfoProvider ownerId={ownerId} people={people} comments={data.reviewComments}>
         <UnsavedGuard>
           <div className="flex flex-col gap-4">

@@ -2,7 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { YearType } from "@/types/domain";
 import { toBoardTask } from "./mapping";
-import type { BoardCategory, BoardTask } from "./types";
+import type { BoardCategory, BoardTask, TaskMove } from "./types";
 import { currentBoardYear, parseYearParam, yearOptions } from "./year";
 
 export type BoardData = {
@@ -15,6 +15,8 @@ export type BoardData = {
   titlePresets: string[];
   /** BR-54: reviewer comments on open review requests, by task id. */
   reviewComments: Record<string, string>;
+  /** BR-58: column history of the loaded tasks, oldest first. */
+  history: Record<string, TaskMove[]>;
 };
 
 export type BoardOwner = {
@@ -79,6 +81,25 @@ export async function loadBoard(ownerId: string, yearParam: unknown): Promise<Bo
     .order("position");
   if (tasksRes.error) throw new Error("โหลดงานไม่สำเร็จ");
 
+  // Joined on tasks so the filter stays in SQL (no long id list in the URL).
+  const historyRes = await supabase
+    .from("task_history")
+    .select("task_id, from_status, to_status, changed_at, tasks!inner(owner_id, year, is_deleted)")
+    .eq("tasks.owner_id", ownerId)
+    .eq("tasks.year", year)
+    .eq("tasks.is_deleted", false)
+    .order("changed_at")
+    .order("id");
+  if (historyRes.error) throw new Error("โหลดประวัติการย้ายงานไม่สำเร็จ");
+  const history: Record<string, TaskMove[]> = {};
+  for (const h of historyRes.data) {
+    (history[h.task_id] ??= []).push({
+      from: h.from_status as TaskMove["from"],
+      to: h.to_status as TaskMove["to"],
+      movedAt: h.changed_at,
+    });
+  }
+
   const reviewsRes = await supabase
     .from("task_reviews")
     .select("task_id, comment")
@@ -95,5 +116,6 @@ export async function loadBoard(ownerId: string, yearParam: unknown): Promise<Bo
     categories: categoriesRes.data.map((c) => ({ id: c.id, name: c.name, isActive: c.is_active })),
     titlePresets: presetsRes.data.map((p) => p.name),
     reviewComments: Object.fromEntries(reviewsRes.data.map((r) => [r.task_id, r.comment ?? ""])),
+    history,
   };
 }
