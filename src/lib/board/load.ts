@@ -11,6 +11,8 @@ export type BoardData = {
   years: number[];
   tasks: BoardTask[];
   categories: BoardCategory[];
+  /** BR-51 names offered in the task dialog. */
+  titlePresets: string[];
 };
 
 export type BoardOwner = {
@@ -47,14 +49,15 @@ export async function loadBoardOwners(): Promise<BoardOwner[]> {
 export async function loadBoard(ownerId: string, yearParam: unknown): Promise<BoardData> {
   const supabase = await createClient();
 
-  const [settingsRes, ownerRes, categoriesRes, yearsRes] = await Promise.all([
+  const [settingsRes, ownerRes, categoriesRes, yearsRes, presetsRes] = await Promise.all([
     supabase.from("app_settings").select("fiscal_start_month").maybeSingle(),
     // BR-31: the board follows its owner's year type (also when an admin opens it).
     supabase.from("profiles").select("year_type").eq("id", ownerId).maybeSingle(),
     supabase.from("categories").select("id, name, is_active").order("sort_order").order("name"),
     supabase.from("tasks").select("year").eq("owner_id", ownerId).eq("is_deleted", false),
+    supabase.from("task_title_presets").select("name").order("sort_order").order("name"),
   ]);
-  if (settingsRes.error || ownerRes.error || categoriesRes.error || yearsRes.error) {
+  if (settingsRes.error || ownerRes.error || categoriesRes.error || yearsRes.error || presetsRes.error) {
     throw new Error("โหลดข้อมูลบอร์ดไม่สำเร็จ");
   }
 
@@ -80,5 +83,6 @@ export async function loadBoard(ownerId: string, yearParam: unknown): Promise<Bo
     years: yearOptions(current, [...yearsRes.data.map((r) => r.year), year]),
     tasks: tasksRes.data.map(toBoardTask),
     categories: categoriesRes.data.map((c) => ({ id: c.id, name: c.name, isActive: c.is_active })),
+    titlePresets: presetsRes.data.map((p) => p.name),
   };
 }

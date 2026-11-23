@@ -58,12 +58,50 @@ type ContentProps = {
   due?: DueState;
   className?: string;
   menu?: React.ReactNode;
+  /** BR-50: one line with the title and small markers; details stay in the edit dialog. */
+  compact?: boolean;
 };
 
 /** Presentational card, also used for the drag overlay. */
-export function TaskCardContent({ task, categoryName, unsaved, due = null, className, menu }: ContentProps) {
+export function TaskCardContent({ task, categoryName, unsaved, due = null, className, menu, compact = false }: ContentProps) {
   const showProgress = task.status === "long_term" && task.progress !== null;
   const dueStyle = due ? DUE_STYLE[due.kind] : null;
+
+  if (compact) {
+    return (
+      <div
+        data-density="compact"
+        className={cn(
+          "relative flex items-center gap-1.5 rounded-lg bg-card py-1.5 pr-1.5 pl-2 text-sm shadow-xs ring-1 ring-foreground/8 transition-[box-shadow,transform] duration-150",
+          dueStyle?.card,
+          className,
+        )}
+      >
+        <span
+          className={cn("flex size-5 shrink-0 items-center justify-center rounded-md ring-1 ring-inset", PRIORITY_STYLE[task.priority])}
+          title={`ความสำคัญ${PRIORITY_LABEL[task.priority]}`}
+        >
+          <FlagIcon className="size-3" aria-hidden />
+          <span className="sr-only">ความสำคัญ{PRIORITY_LABEL[task.priority]}</span>
+        </span>
+        <p className="line-clamp-2 min-w-0 flex-1 leading-snug font-medium break-words" data-testid="task-title" title={task.title}>
+          {task.title}
+        </p>
+        {due && dueStyle && (
+          <span className={cn("shrink-0", dueStyle.date)} title={dueLabel(due)} data-testid="task-due-state" data-kind={due.kind}>
+            <dueStyle.icon className="size-3.5" aria-hidden />
+            <span className="sr-only">{dueLabel(due)}</span>
+          </span>
+        )}
+        {unsaved && (
+          <span className="size-2 shrink-0 rounded-full bg-brand-gold" title="ยังไม่บันทึก" data-testid="task-unsaved">
+            <span className="sr-only">ยังไม่บันทึก</span>
+          </span>
+        )}
+        {menu}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -178,9 +216,10 @@ type SortableProps = {
   onEdit: () => void;
   onDelete: () => void;
   onMove: (to: TaskStatus) => void;
+  compact: boolean;
 };
 
-export function SortableTaskCard({ task, categoryName, unsaved, due, onEdit, onDelete, onMove }: SortableProps) {
+export function SortableTaskCard({ task, categoryName, unsaved, due, onEdit, onDelete, onMove, compact }: SortableProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
 
   // React events bubble out of portals to the card, so stop them here: the menu must
@@ -245,6 +284,7 @@ export function SortableTaskCard({ task, categoryName, unsaved, due, onEdit, onD
         unsaved={unsaved}
         due={due}
         menu={menu}
+        compact={compact}
         className="cursor-grab hover:-translate-y-px hover:shadow-md hover:ring-primary/25 active:cursor-grabbing"
       />
     </li>

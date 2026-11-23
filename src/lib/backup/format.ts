@@ -5,7 +5,7 @@ export const BACKUP_FORMAT = "kanban-backup";
 export const BACKUP_VERSION = 1;
 export const BACKUP_MAX_BYTES = 20 * 1024 * 1024;
 
-export const BACKUP_TABLES = ["profiles", "categories", "tasks", "task_history", "leaves"] as const;
+export const BACKUP_TABLES = ["profiles", "categories", "tasks", "task_history", "leaves", "holidays", "task_title_presets"] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
 export const BACKUP_TABLE_LABEL: Record<BackupTable, string> = {
@@ -14,6 +14,8 @@ export const BACKUP_TABLE_LABEL: Record<BackupTable, string> = {
   tasks: "งาน",
   task_history: "ประวัติการย้ายงาน",
   leaves: "วันลา",
+  holidays: "วันหยุด",
+  task_title_presets: "หัวข้องาน",
 };
 
 type Row = Record<string, unknown>;
@@ -37,7 +39,11 @@ const REQUIRED: Record<BackupTable, string[]> = {
   tasks: ["id", "owner_id", "title", "status", "category_id", "year"],
   task_history: ["task_id", "to_status", "changed_by", "changed_at"],
   leaves: ["id", "owner_id", "leave_type", "start_date", "end_date", "created_by"],
+  holidays: ["holiday_date", "name"],
+  task_title_presets: ["name"],
 };
+// Tables added after the first backups were made: missing means none.
+const OPTIONAL_TABLES: readonly BackupTable[] = ["holidays", "task_title_presets"];
 const UUID_FIELDS = ["id", "owner_id", "category_id", "task_id", "changed_by", "created_by"];
 
 export type BackupCheck = { ok: true; backup: BackupFile; counts: BackupCounts } | { ok: false; error: string };
@@ -52,8 +58,10 @@ export function checkBackup(raw: unknown): BackupCheck {
   if (!isObj(raw.data)) return { ok: false, error: "ไฟล์ backup ไม่มีข้อมูล" };
 
   const counts = {} as BackupCounts;
+  const data: Row = { ...raw.data };
   for (const table of BACKUP_TABLES) {
-    const rows = raw.data[table];
+    if (data[table] === undefined && OPTIONAL_TABLES.includes(table)) data[table] = [];
+    const rows = data[table];
     if (!Array.isArray(rows)) return { ok: false, error: `ไฟล์ backup ไม่มีข้อมูล${BACKUP_TABLE_LABEL[table]}` };
     for (const [i, row] of rows.entries()) {
       if (!isObj(row)) return { ok: false, error: `ข้อมูล${BACKUP_TABLE_LABEL[table]} แถวที่ ${i + 1} ไม่ถูกต้อง` };
@@ -69,11 +77,11 @@ export function checkBackup(raw: unknown): BackupCheck {
     }
     counts[table] = rows.length;
   }
-  const settings = raw.data.app_settings;
+  const settings = data.app_settings;
   if (settings !== null && settings !== undefined && !isObj(settings)) {
     return { ok: false, error: "การตั้งค่าในไฟล์ backup ไม่ถูกต้อง" };
   }
-  return { ok: true, backup: raw as unknown as BackupFile, counts };
+  return { ok: true, backup: { ...raw, data } as unknown as BackupFile, counts };
 }
 
 /** e.g. kanban-backup-2569-11-22-1530.json (Buddhist Era, Bangkok time). */

@@ -61,6 +61,28 @@ export type Database = {
         }
         Relationships: []
       }
+      holidays: {
+        Row: {
+          created_at: string
+          holiday_date: string
+          id: string
+          name: string
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          holiday_date: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          holiday_date?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       leaves: {
         Row: {
           created_at: string
@@ -206,6 +228,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      task_title_presets: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       tasks: {
         Row: {

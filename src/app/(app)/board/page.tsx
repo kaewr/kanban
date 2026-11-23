@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Board } from "@/components/board/board";
 import { requireProfile } from "@/lib/auth";
 import { loadBoard, loadBoardOwners } from "@/lib/board/load";
+import { loadTodayNotice } from "@/lib/leave/today";
 
 export const metadata = { title: "บอร์ด | Kanban Board บันทึกงาน" };
 // Every page reads the session per request, so it cannot be an instant navigation.
@@ -21,7 +22,7 @@ export default async function BoardPage({ searchParams }: PageProps<"/board">) {
     owner = found;
   }
 
-  const data = await loadBoard(owner.id, year);
+  const [data, todayNotice] = await Promise.all([loadBoard(owner.id, year), loadTodayNotice(owner.id)]);
 
   // key: a different owner or year mounts a fresh board store.
   return (
@@ -32,6 +33,7 @@ export default async function BoardPage({ searchParams }: PageProps<"/board">) {
       viewer={{ id: profile.id, username: profile.username }}
       owner={owner}
       owners={owners}
+      todayNotice={todayNotice}
     />
   );
 }

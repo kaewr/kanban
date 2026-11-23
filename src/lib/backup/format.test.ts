@@ -23,6 +23,16 @@ describe("checkBackup", () => {
     expect(result).toMatchObject({ ok: true, counts: { profiles: 1, categories: 1, tasks: 1, task_history: 1, leaves: 1 } });
   });
 
+  it("accepts older files made before holidays existed", () => {
+    const result = checkBackup(valid);
+    expect(result).toMatchObject({ ok: true, counts: { holidays: 0, task_title_presets: 0 } });
+    if (result.ok) expect(result.backup.data.holidays).toEqual([]);
+    const withHoliday = { ...valid, data: { ...valid.data, holidays: [{ holiday_date: "2026-12-05", name: "วันพ่อ" }] } };
+    expect(checkBackup(withHoliday)).toMatchObject({ ok: true, counts: { holidays: 1 } });
+    const badHoliday = { ...valid, data: { ...valid.data, holidays: [{ holiday_date: "2026-12-05", name: "" }] } };
+    expect(checkBackup(badHoliday).ok).toBe(false);
+  });
+
   it("rejects other files, other versions and broken rows", () => {
     expect(checkBackup({ hello: 1 })).toEqual({ ok: false, error: "ไฟล์นี้ไม่ใช่ไฟล์ backup ของระบบ" });
     expect(checkBackup({ ...valid, version: 2 }).ok).toBe(false);

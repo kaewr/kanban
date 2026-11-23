@@ -40,6 +40,8 @@ import { BoardFilters } from "./board-filters";
 import { DeleteTaskDialog } from "./delete-task-dialog";
 import { TaskCardContent } from "./task-card";
 import { TaskDialog, type TaskDialogMode } from "./task-dialog";
+import { CardDensityToggle } from "./card-density-toggle";
+import { useCardDensity } from "./use-card-density";
 
 type Columns = Record<TaskStatus, BoardTask[]>;
 
@@ -60,7 +62,15 @@ function columnStatus(id: UniqueIdentifier): TaskStatus | null {
   return (TASK_STATUSES as readonly string[]).includes(status) ? (status as TaskStatus) : null;
 }
 
-export function BoardView({ categories, years }: { categories: BoardCategory[]; years: number[] }) {
+export function BoardView({
+  categories,
+  years,
+  titlePresets,
+}: {
+  categories: BoardCategory[];
+  years: number[];
+  titlePresets: string[];
+}) {
   const tasks = useBoardStore((s) => s.tasks);
   const snapshot = useBoardStore((s) => s.snapshot);
   const year = useBoardStore((s) => s.year);
@@ -77,6 +87,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
   const limitOf = (status: TaskStatus) => limits[status] ?? COLUMN_PAGE_SIZE;
   // Bangkok date for FR-13 highlights, fixed for the life of the page.
   const [today] = useState(() => bangkokDate(new Date()));
+  const [compact, setCompact] = useCardDensity();
 
   const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
@@ -200,8 +211,11 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
           },
         }}
       >
-        <div className="mb-3">
-          <BoardFilters filter={filter} onChange={setFilter} categories={categories} shown={shown} total={total} />
+        <div className="mb-3 flex flex-wrap items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <BoardFilters filter={filter} onChange={setFilter} categories={categories} shown={shown} total={total} />
+          </div>
+          <CardDensityToggle compact={compact} onChange={setCompact} />
         </div>
 
         {/* Phones: one column per screen with snap scrolling; desktop: all five. */}
@@ -222,6 +236,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
               onEdit={(id) => setDialog({ kind: "edit", taskId: id })}
               onDelete={setDeletingId}
               onMove={moveToColumn}
+              compact={compact}
               paging={
                 filtering
                   ? null
@@ -244,6 +259,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
               categoryName={categoryNames.get(activeTask.categoryId) ?? ""}
               unsaved={false}
               due={dueState(activeTask, today)}
+              compact={compact}
               className="rotate-2 cursor-grabbing shadow-xl ring-primary/30"
             />
           ) : null}
@@ -255,6 +271,7 @@ export function BoardView({ categories, years }: { categories: BoardCategory[]; 
         onClose={() => setDialog(null)}
         categories={categories}
         years={years}
+        titlePresets={titlePresets}
       />
       <DeleteTaskDialog taskId={deletingId} onClose={() => setDeletingId(null)} />
     </>

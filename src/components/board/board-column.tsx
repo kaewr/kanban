@@ -35,6 +35,8 @@ type Props = {
   onMove: (id: string, to: TaskStatus) => void;
   /** Paging: cards still hidden; null while a filter shows every match. */
   paging: { hidden: number; canCollapse: boolean; onMore: () => void; onCollapse: () => void } | null;
+  /** BR-50 compact cards. */
+  compact: boolean;
 };
 
 export function BoardColumn({
@@ -52,6 +54,7 @@ export function BoardColumn({
   onDelete,
   onMove,
   paging,
+  compact,
 }: Props) {
   // The whole column (header included) accepts drops.
   const { setNodeRef } = useDroppable({ id: `${COLUMN_ID_PREFIX}${status}` });
@@ -119,7 +122,7 @@ export function BoardColumn({
       {/* Scrolls on its own when the column is taller than the screen (thin bar on hover). */}
       <div data-testid="column-drop" className="scroll-thin flex min-h-16 flex-col overflow-y-auto overscroll-contain">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-          <ol className="flex flex-col gap-2 px-2 pt-1 pb-2">
+          <ol className={cn("flex flex-col px-2 pt-1 pb-2", compact ? "gap-1" : "gap-2")}>
             {tasks.map((task) => (
               <SortableTaskCard
                 key={task.id}
@@ -130,6 +133,7 @@ export function BoardColumn({
                 onEdit={() => onEdit(task.id)}
                 onDelete={() => onDelete(task.id)}
                 onMove={(to) => onMove(task.id, to)}
+                compact={compact}
               />
             ))}
           </ol>

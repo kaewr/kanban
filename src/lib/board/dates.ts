@@ -33,6 +33,17 @@ export function daysBetween(from: string, to: string): number {
   return Math.round(ms / 86_400_000);
 }
 
+/** Thai display with the weekday, e.g. "อ. 13 ต.ค. 2569", for a YYYY-MM-DD date. */
+export function formatThaiWeekdayDate(date: string): string {
+  return new Intl.DateTimeFormat("th-TH", {
+    timeZone: TIME_ZONE,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${date}T00:00:00+07:00`));
+}
+
 /** Thai display, e.g. "21 พ.ย. 2569". Accepts YYYY-MM-DD or an ISO timestamp. */
 export function formatThaiDate(value: string): string {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00+07:00`) : new Date(value);

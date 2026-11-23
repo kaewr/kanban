@@ -62,6 +62,8 @@ async function cleanup(): Promise<void> {
     const taskIds = (tasks ?? []).map((t: { id: string }) => t.id);
     await service.from("leaves").delete().in("owner_id", ids);
     await service.from("leaves").delete().in("created_by", ids);
+    await service.from("holidays").delete().eq("name", "rls_test");
+    await service.from("task_title_presets").delete().ilike("name", "rls_test");
     await service.from("task_history").delete().in("changed_by", ids);
     if (taskIds.length > 0) {
       await service.from("task_history").delete().in("task_id", taskIds);
@@ -282,6 +284,26 @@ async function main(): Promise<void> {
     check("A can read units", (units.data ?? []).length === 4, units.error?.message);
     const unitIns = await c.from("units").insert({ id: "rls_test", name: "rls_test_unit" });
     check("A cannot create units", unitIns.error !== null);
+
+    // BR-49 holidays: everyone reads, only admins write
+    const hol = await c.from("holidays").select("id").limit(1);
+    check("A can read holidays", hol.error === null && (hol.data ?? []).length === 1, hol.error?.message);
+    const holIns = await c.from("holidays").insert({ holiday_date: "2099-01-02", name: "rls_test" });
+    check("A cannot add holidays", holIns.error !== null);
+    const holUpd = await c.from("holidays").update({ name: "x" }).eq("id", hol.data?.[0]?.id ?? "").select("id");
+    check("A cannot rename holidays", holUpd.error !== null || (holUpd.data ?? []).length === 0);
+    const holDel = await c.from("holidays").delete().eq("id", hol.data?.[0]?.id ?? "").select("id");
+    check("A cannot delete holidays", holDel.error !== null || (holDel.data ?? []).length === 0);
+
+    // BR-51 task title presets: everyone reads, only admins write
+    const pre = await c.from("task_title_presets").select("id").limit(1);
+    check("A can read task title presets", pre.error === null && (pre.data ?? []).length === 1, pre.error?.message);
+    const preIns = await c.from("task_title_presets").insert({ name: "rls_test" });
+    check("A cannot add task title presets", preIns.error !== null);
+    const preUpd = await c.from("task_title_presets").update({ name: "x" }).eq("id", pre.data?.[0]?.id ?? "").select("id");
+    check("A cannot rename task title presets", preUpd.error !== null || (preUpd.data ?? []).length === 0);
+    const preDel = await c.from("task_title_presets").delete().eq("id", pre.data?.[0]?.id ?? "").select("id");
+    check("A cannot delete task title presets", preDel.error !== null || (preDel.data ?? []).length === 0);
     const posUpd = await c.from("profiles").update({ position: "หัวหน้า" }).eq("id", a.id).select("id");
     check("A cannot change own position", posUpd.error !== null || (posUpd.data ?? []).length === 0);
     const yearUpd = await c.from("profiles").update({ year_type: "calendar" }).eq("id", a.id).select("id");
@@ -322,6 +344,20 @@ async function main(): Promise<void> {
     const setUpd = await c.from("app_settings").update({ fiscal_start_month: 10 }).eq("id", true).select("id");
     check("admin can update app_settings", (setUpd.data ?? []).length === 1, setUpd.error?.message);
 
+    const holAdd = await c.from("holidays").insert({ holiday_date: "2099-01-02", name: "rls_test" }).select("id");
+    check("admin can add holidays", holAdd.error === null && (holAdd.data ?? []).length === 1, holAdd.error?.message);
+    const holDup = await c.from("holidays").insert({ holiday_date: "2099-01-02", name: "rls_test 2" });
+    check("holidays are unique per date", holDup.error?.code === "23505", holDup.error?.message);
+    const holDel = await c.from("holidays").delete().eq("holiday_date", "2099-01-02").select("id");
+    check("admin can delete holidays", (holDel.data ?? []).length === 1, holDel.error?.message);
+
+    const preAdd = await c.from("task_title_presets").insert({ name: "rls_test" }).select("id");
+    check("admin can add task title presets", preAdd.error === null && (preAdd.data ?? []).length === 1, preAdd.error?.message);
+    const preDup = await c.from("task_title_presets").insert({ name: "RLS_TEST" });
+    check("task title presets are unique ignoring case", preDup.error?.code === "23505", preDup.error?.message);
+    const preDel = await c.from("task_title_presets").delete().eq("name", "rls_test").select("id");
+    check("admin can delete task title presets", (preDel.data ?? []).length === 1, preDel.error?.message);
+
     // FR-18: reorder needs the full list; reversing twice restores the original order.
     const ordered = must(await c.from("categories").select("id").order("sort_order").order("name"), "read order");
     const ids = ordered.map((r) => r.id);
@@ -352,6 +388,10 @@ async function main(): Promise<void> {
     check("inactive A reads no categories", (cats.data ?? []).length === 0);
     const settings = await c.from("app_settings").select("id");
     check("inactive A reads no app_settings", (settings.data ?? []).length === 0);
+    const holidays = await c.from("holidays").select("id");
+    check("inactive A reads no holidays", (holidays.data ?? []).length === 0);
+    const presets = await c.from("task_title_presets").select("id");
+    check("inactive A reads no task title presets", (presets.data ?? []).length === 0);
     const ins = await c
       .from("tasks")
       .insert({ owner_id: a.id, title: "x", status: "short_term", category_id: category.id, year: YEAR });

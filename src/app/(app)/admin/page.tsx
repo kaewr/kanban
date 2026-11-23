@@ -1,8 +1,10 @@
 import {
   CalendarCogIcon,
+  CalendarHeartIcon,
   ChevronRightIcon,
   Columns3Icon,
   DatabaseBackupIcon,
+  ListChecksIcon,
   ShieldIcon,
   TagsIcon,
   UsersIcon,
@@ -36,10 +38,22 @@ const SECTIONS = [
     description: "เพิ่ม แก้ชื่อ เรียงลำดับ ปิด/เปิดใช้งานหมวดหมู่",
   },
   {
+    href: ROUTES.adminTaskTitles,
+    icon: ListChecksIcon,
+    title: "หัวข้องาน",
+    description: "รายการชื่องานสำเร็จรูปให้เลือกตอนเพิ่มงาน เพิ่ม แก้ชื่อ เรียงลำดับ ลบ",
+  },
+  {
     href: ROUTES.adminSettings,
     icon: CalendarCogIcon,
     title: "ตั้งค่าปีงบประมาณ",
     description: "เดือนเริ่มปีงบประมาณที่ใช้ร่วมกันทั้งระบบ",
+  },
+  {
+    href: ROUTES.adminHolidays,
+    icon: CalendarHeartIcon,
+    title: "วันหยุดราชการ",
+    description: "เพิ่ม/ลบวันหยุด แสดงเป็นป้ายบนบอร์ดและปฏิทินวันลา",
   },
   {
     href: ROUTES.adminBackup,

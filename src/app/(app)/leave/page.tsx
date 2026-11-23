@@ -1,4 +1,5 @@
-import { CalendarOffIcon } from "lucide-react";
+import { CalendarDaysIcon, CalendarOffIcon } from "lucide-react";
+import Link from "next/link";
 import { LeaveTypeBadge } from "@/components/leave/leave-type-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireProfile } from "@/lib/auth";
@@ -8,6 +9,7 @@ import { currentBoardYear, parseYearParam, yearDateRange, yearLabel, yearOptions
 import { monthSeries } from "@/lib/dashboard/summary";
 import { LEAVE_TYPES } from "@/lib/leave/rules";
 import { parseLeaveSummary } from "@/lib/leave/summary";
+import { ROUTES } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { LeaveFilters } from "./leave-filters";
@@ -78,13 +80,22 @@ export default async function LeavePage({ searchParams }: PageProps<"/leave">) {
             {isSelf ? "แจ้งวันลาของคุณ" : `วันลาของ ${owner.displayName}`} · {yearLabel(year, profile.yearType)} · นับเฉพาะวันจันทร์–ศุกร์
           </p>
         </div>
-        <LeaveFilters
-          year={year}
-          years={yearOptions(current, []).map((y) => ({ value: y, label: yearLabel(y, profile.yearType) }))}
-          ownerId={owner.id}
-          viewerId={profile.id}
-          owners={owners?.map((o) => ({ id: o.id, name: o.displayName })) ?? null}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={ROUTES.leaveCalendar}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-primary ring-1 ring-primary/25 hover:bg-primary/8"
+          >
+            <CalendarDaysIcon className="size-4" aria-hidden />
+            ปฏิทินวันลา
+          </Link>
+          <LeaveFilters
+            year={year}
+            years={yearOptions(current, []).map((y) => ({ value: y, label: yearLabel(y, profile.yearType) }))}
+            ownerId={owner.id}
+            viewerId={profile.id}
+            owners={owners?.map((o) => ({ id: o.id, name: o.displayName })) ?? null}
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-5">

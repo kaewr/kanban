@@ -9,6 +9,9 @@ export const ROUTES = {
   adminCategories: "/admin/categories",
   adminSettings: "/admin/settings",
   adminBackup: "/admin/backup",
+  adminHolidays: "/admin/holidays",
+  adminTaskTitles: "/admin/task-titles",
+  leaveCalendar: "/leave/calendar",
   profile: "/profile",
 } as const;
 
