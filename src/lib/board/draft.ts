@@ -34,7 +34,10 @@ export function loadDraft(key: string): BoardDraft | null {
     if (parsed.v !== FORMAT_VERSION || typeof parsed.savedAt !== "string" || !Array.isArray(parsed.tasks)) {
       return null;
     }
-    const tasks = parsed.tasks.filter(isBoardTaskLike);
+    // Drafts saved by an older version may lack newer fields: fill them with "none".
+    const tasks = parsed.tasks
+      .filter(isBoardTaskLike)
+      .map((t) => ({ ...t, reviewerId: t.reviewerId ?? null, durationMinutes: t.durationMinutes ?? null }));
     return tasks.length > 0 ? { savedAt: parsed.savedAt, tasks } : null;
   } catch {
     return null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exceedsWipLimit, formatDuration, statusChangeDates, suggestsLongTerm, validateTaskInput } from "./rules";
+import { exceedsWipLimit, formatDuration, missingDuration, statusChangeDates, suggestsLongTerm, validateTaskInput } from "./rules";
 import type { TaskInput } from "./types";
 
 const NOW = "2026-11-21T03:00:00.000Z";
@@ -134,5 +134,35 @@ describe("duration minutes (BR-57)", () => {
     expect(formatDuration(45)).toBe("45 นาที");
     expect(formatDuration(90)).toBe("1 ชม. 30 นาที");
     expect(formatDuration(120)).toBe("2 ชม.");
+  });
+});
+
+describe("missingDuration (BR-57 fix)", () => {
+  const at = "2026-11-24T02:00:00.000Z";
+  const base = { isNew: true, isDeleted: false, status: "done" as const, durationMinutes: null };
+
+  it("flags a new task created straight in done without minutes", () => {
+    expect(missingDuration({ ...base, moves: [{ from: null, to: "done", movedAt: at }] })).toBe(true);
+  });
+
+  it("does not flag a new task created elsewhere and moved to done", () => {
+    const moves = [
+      { from: null, to: "short_term" as const, movedAt: at },
+      { from: "short_term" as const, to: "done" as const, movedAt: at },
+    ];
+    expect(missingDuration({ ...base, moves })).toBe(false);
+  });
+
+  it("does not flag saved tasks, tasks with minutes, or other columns", () => {
+    const moves = [{ from: null, to: "done" as const, movedAt: at }];
+    expect(missingDuration({ ...base, isNew: false, moves })).toBe(false);
+    expect(missingDuration({ ...base, durationMinutes: 30, moves })).toBe(false);
+    expect(missingDuration({ ...base, isDeleted: true, moves })).toBe(false);
+    expect(missingDuration({ ...base, status: "in_progress", moves: [{ from: null, to: "in_progress", movedAt: at }] })).toBe(false);
+  });
+
+  it("treats a missing field (old draft) like no minutes", () => {
+    const old = { isNew: true, isDeleted: false, status: "done" as const, moves: [{ from: null, to: "done" as const, movedAt: at }] };
+    expect(missingDuration(old as Parameters<typeof missingDuration>[0])).toBe(true);
   });
 });

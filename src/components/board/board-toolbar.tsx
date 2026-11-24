@@ -41,7 +41,7 @@ export function BoardToolbar({
   const tasks = useBoardStore((s) => s.tasks);
   const snapshot = useBoardStore((s) => s.snapshot);
   const changeCount = useMemo(() => changedTasks(tasks, snapshot).length, [tasks, snapshot]);
-  const { status, save, conflicts, reloading, reloadConflicts, dismissConflicts } = useBoardSave();
+  const { status, errorMessage, save, conflicts, reloading, reloadConflicts, dismissConflicts } = useBoardSave();
 
   const saving = status === "saving";
   let message = "ไม่มีรายการที่ยังไม่บันทึก";
@@ -81,8 +81,8 @@ export function BoardToolbar({
       {/* FR-09 */}
       <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
         {status === "error" && (
-          <p role="alert" className="text-sm text-destructive">
-            บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง
+          <p role="alert" className="max-w-md text-sm text-destructive" data-testid="save-error">
+            {errorMessage ? `บันทึกไม่สำเร็จ: ${errorMessage}` : "บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"}
           </p>
         )}
         <div

@@ -473,6 +473,21 @@ async function main(): Promise<void> {
     check("creating straight in done needs minutes", missing.error !== null);
     const bad = await a.client.rpc("save_board_changes", { p_changes: { tasks: [item("create", "done", 0)] } });
     check("minutes must be at least 1", bad.error !== null);
+    // Fix 24 Nov 2026: added in another column and dragged to done before saving -> no minutes needed.
+    const movedId = randomUUID();
+    const moved = await a.client.rpc("save_board_changes", {
+      p_changes: {
+        tasks: [{
+          ...item("create", "done", null), id: movedId,
+          moves: [
+            { from: null, to: "short_term", moved_at: new Date().toISOString() },
+            { from: "short_term", to: "done", moved_at: new Date().toISOString() },
+          ],
+        }],
+      },
+    });
+    check("a task created elsewhere and moved to done saves without minutes", moved.error === null, moved.error?.message);
+    check("the direct-to-done error names the task", (missing.error?.message ?? "").includes("งานเสร็จย้อนหลัง"), missing.error?.message);
     const ok = await a.client.rpc("save_board_changes", { p_changes: { tasks: [item("create", "done", 45)] } });
     const saved = must(await service.from("tasks").select("duration_minutes, version").eq("id", id).single(), "read") as {
       duration_minutes: number | null; version: number;

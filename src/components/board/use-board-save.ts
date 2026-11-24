@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { changedTasks } from "@/lib/board/changes";
+import { missingDuration } from "@/lib/board/rules";
 import { toBoardTask } from "@/lib/board/mapping";
 import { buildSavePayload, parseSaveResult, type SaveConflict } from "@/lib/board/save";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +15,8 @@ export type SaveStatus = "idle" | "saving" | "saved" | "error";
 export function useBoardSave() {
   const store = useBoardStoreApi();
   const [status, setStatus] = useState<SaveStatus>("idle");
+  // Why the last save failed, in Thai, when we know it.
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [conflicts, setConflicts] = useState<SaveConflict[] | null>(null);
   const [reloading, setReloading] = useState(false);
 
@@ -22,12 +25,25 @@ export function useBoardSave() {
     const changed = changedTasks(tasks, snapshot);
     if (changed.length === 0 || status === "saving") return;
 
+    // Check BR-57 here so the person sees which tasks need minutes (nothing is sent).
+    const needMinutes = changed.filter(missingDuration);
+    if (needMinutes.length > 0) {
+      setErrorMessage(
+        `กรุณากรอกเวลาที่ใช้ (นาที) ของงาน ${needMinutes.map((t) => `"${t.title}"`).join(", ")} (คลิกการ์ดเพื่อกรอก)`,
+      );
+      setStatus("error");
+      return;
+    }
+
     setStatus("saving");
+    setErrorMessage(null);
     const supabase = createClient();
     const { data, error } = await supabase.rpc("save_board_changes", {
       p_changes: buildSavePayload(changed) as unknown as Json,
     });
     if (error) {
+      // P0001 = a rule the database enforces, with a message written for the user.
+      setErrorMessage(error.code === "P0001" ? error.message : null);
       setStatus("error");
       return;
     }
@@ -63,6 +79,7 @@ export function useBoardSave() {
 
   return {
     status,
+    errorMessage,
     save,
     conflicts,
     reloading,

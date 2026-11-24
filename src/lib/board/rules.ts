@@ -28,6 +28,24 @@ export type TaskInputErrors = Partial<Record<keyof TaskInput, string>>;
 /** BR-57: at most a year of minutes (matches the DB check). */
 export const DURATION_MAX = 525_600;
 
+/**
+ * BR-57: a task created straight in "done" (its first move is null -> done) must carry
+ * minutes before it can be saved. A task created elsewhere and moved to done need not.
+ * Mirrors the check in save_board_changes.
+ */
+export function missingDuration(
+  task: Pick<BoardTask, "isNew" | "isDeleted" | "status" | "durationMinutes" | "moves">,
+): boolean {
+  const first = task.moves[0];
+  return (
+    task.isNew &&
+    !task.isDeleted &&
+    task.status === "done" &&
+    task.durationMinutes == null && // drafts saved before BR-57 have no field at all
+    (first === undefined || (first.from === null && first.to === "done"))
+  );
+}
+
 /** e.g. 45 -> "45 นาที", 90 -> "1 ชม. 30 นาที", 120 -> "2 ชม.". */
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);

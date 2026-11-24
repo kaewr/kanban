@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PRIORITY_LABEL, STATUSES_REQUIRING_START, STATUS_LABEL, TITLE_MAX } from "@/lib/board/constants";
 import { bangkokDate, dateTimeInputToTimestamp, formatThaiDateTime, toDateTimeInput } from "@/lib/board/dates";
 import { movesOf } from "@/lib/board/history";
-import { DURATION_MAX, validateTaskInput, type TaskInputErrors } from "@/lib/board/rules";
+import { DURATION_MAX, missingDuration, validateTaskInput, type TaskInputErrors } from "@/lib/board/rules";
 import type { BoardCategory, BoardTask, TaskInput, TaskMove } from "@/lib/board/types";
 import { useBoardStore } from "@/stores/board-store-provider";
 import { ReviewerSelect } from "./reviewer-select";
@@ -83,6 +83,8 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
   const isNew = !task;
   const today = bangkokDate(openedAt);
   const now = toDateTimeInput(openedAt);
+  // BR-57: required for a new task and for an unsaved one entered straight in done.
+  const durationRequired = isNew || (task !== undefined && missingDuration({ ...task, durationMinutes: null }));
   const savedHistory = useBoardStore((s) => (task ? s.history[task.id] : undefined));
   const needsStart = STATUSES_REQUIRING_START.includes(status);
   const showStart = needsStart || Boolean(task?.startedAt);
@@ -278,7 +280,7 @@ function TaskForm({ status, task, categories, years, titlePresets, onDone }: For
         {status === "done" && (
           <Field
             id="task-duration"
-            label={isNew ? "ใช้เวลา (นาที)" : "ใช้เวลา (นาที) ไม่บังคับ"}
+            label={durationRequired ? "ใช้เวลา (นาที)" : "ใช้เวลา (นาที) ไม่บังคับ"}
             error={errors.durationMinutes}
           >
             <Input
