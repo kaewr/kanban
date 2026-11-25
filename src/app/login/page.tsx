@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { AppFooter } from "@/components/app-footer";
 import { AuthCard } from "@/components/auth-card";
 import { FormMessage } from "@/components/form-message";
 import { listLoginGroups } from "@/lib/accounts";
@@ -10,17 +11,20 @@ export const metadata = { title: "เข้าสู่ระบบ | Kanban Boa
 
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <AuthCard title="Kanban Board บันทึกงาน" description="เลือกชื่อของคุณ แล้วกรอกรหัสผ่าน">
-      <div className="flex flex-col gap-4">
-        <Suspense fallback={null}>
-          <InactiveNotice searchParams={searchParams} />
-        </Suspense>
-        {/* The form appears only once the name list is loaded, so nothing typed is lost. */}
-        <Suspense fallback={<LoginFormSkeleton />}>
-          <LoginFormWithAccounts />
-        </Suspense>
-      </div>
-    </AuthCard>
+    <>
+      <AuthCard title="Kanban Board บันทึกงาน" description="เลือกชื่อของคุณ แล้วกรอกรหัสผ่าน">
+        <div className="flex flex-col gap-4">
+          <Suspense fallback={null}>
+            <InactiveNotice searchParams={searchParams} />
+          </Suspense>
+          {/* The form appears only once the name list is loaded, so nothing typed is lost. */}
+          <Suspense fallback={<LoginFormSkeleton />}>
+            <LoginFormWithAccounts />
+          </Suspense>
+        </div>
+      </AuthCard>
+      <AppFooter />
+    </>
   );
 }
 

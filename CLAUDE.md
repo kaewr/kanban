@@ -123,6 +123,9 @@ docs/requirements.md     # สเปก
 3. ถ้าสเปกไม่ชัดหรือขัดกันเอง ให้ถาม อย่าเดา
 4. ก่อนจบงาน: `npm run build`, `npm run lint`, `npm test` และ `npm run test:e2e` ต้องผ่าน เพิ่ม e2e test ของ FR ที่ทำใน `e2e/` และสรุปวิธีทดสอบด้วยมือ
 5. ข้อความ commit: `feat(FR-08): drag and drop between columns`
+6. **เวอร์ชัน (SemVer, เริ่ม 25 พ.ย. 2026)** — ทุกครั้งที่ขึ้น prod: แก้บั๊กอย่างเดียว = PATCH, มีความสามารถใหม่ = MINOR (PATCH เป็น 0), เปลี่ยนจนวิธีใช้เดิมใช้ไม่ได้/ต้องย้ายข้อมูล = MAJOR / เสนอเลขในแผนให้ผู้ใช้อนุมัติ → `npm version X.Y.Z --no-git-tag-version` (package.json + lock) → เพิ่มหัวข้อบนสุดใน `CHANGELOG.md` (ภาษาไทย สำหรับผู้ใช้, `## [X.Y.Z] - YYYY-MM-DD` + `### เพิ่ม` / `### แก้ไข` / `### เปลี่ยน`) → commit `release: vX.Y.Z` → หลัง merge ขึ้น main: `git tag vX.Y.Z` + `git push origin vX.Y.Z` / unit test บังคับว่าหัวข้อบนสุดของ CHANGELOG = เวอร์ชันใน package.json
+   - แสดงผล: `AppFooter` (ทุกหน้าใน `(app)` + หน้า login) "เวอร์ชัน X.Y.Z · <commit 7 ตัว>" — ค่าฝังตอน build ใน `next.config.ts` (`NEXT_PUBLIC_APP_VERSION`, `NEXT_PUBLIC_COMMIT_SHA` จาก `VERCEL_GIT_COMMIT_SHA` หรือ git, `APP_CHANGELOG` = เนื้อหา CHANGELOG.md) / หน้า `/changelog` ("มีอะไรใหม่") ต้อง login อ่านผ่าน `parseChangelog()` ใน `src/lib/changelog.ts`
+   - git tag ย้อนหลัง: v1.0.0 = c0ca357, v1.1.0 = 6865ee3, v1.2.0 = b994585, v1.2.1 = 5b3a086
 
 ## Progress
 
@@ -137,4 +140,5 @@ docs/requirements.md     # สเปก
 - [x] วันลา (FR-22)
 - [x] สำรอง/กู้คืนข้อมูล (FR-23)
 - [x] แถบวันนี้ลา/วันหยุด + ปฏิทินวันลา + วันหยุดราชการ (FR-24) + การ์ดกะทัดรัด (FR-25) + หัวข้องานสำเร็จรูป / กำหนดเสร็จเริ่มต้นวันนี้ (FR-26)
+- [x] เลขเวอร์ชันบนทุกหน้า + หน้า "มีอะไรใหม่" (v1.3.0)
 - [x] Tag ผู้ตรวจ + หน้าตรวจงาน + แจ้งเตือนในระบบ (FR-27) + เวลาที่ใช้เป็นนาที (FR-28) + รายละเอียด/วันเวลาบนการ์ด (FR-29)

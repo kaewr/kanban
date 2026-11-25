@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AppFooter } from "@/components/app-footer";
 import { AppHeader, AppHeaderFallback } from "@/components/app-header";
 import { DefaultPasswordBanner } from "@/components/default-password-banner";
 
@@ -12,6 +13,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         <DefaultPasswordBanner />
       </Suspense>
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6">{children}</main>
+      <AppFooter linkToChangelog className="border-t" />
     </div>
   );
 }

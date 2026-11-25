@@ -13,6 +13,7 @@ export const ROUTES = {
   adminTaskTitles: "/admin/task-titles",
   leaveCalendar: "/leave/calendar",
   reviews: "/reviews",
+  changelog: "/changelog",
   profile: "/profile",
 } as const;
 
