@@ -61,7 +61,7 @@ docs/requirements.md     # สเปก
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (publishable key `sb_publishable_...`)
 - `SUPABASE_SERVICE_ROLE_KEY` — server เท่านั้น (secret key `sb_secret_...` หรือ legacy service_role)
-- `DEFAULT_PASSWORD=123456`
+- `DEFAULT_PASSWORD` — รหัสผ่านเริ่มต้นตอน admin สร้าง/รีเซ็ตผู้ใช้ ตั้งเองใน `.env*` / Vercel **ห้ามเขียนค่าจริงลงในไฟล์ที่ commit** (repo เป็น public)
 
 ## Rules
 

@@ -27,7 +27,7 @@ cp .env.example .env.local     # Windows PowerShell: Copy-Item .env.example .env
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://<project-ref>.supabase.co` | browser + server |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_...`) | browser + server |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret key (`sb_secret_...`) หรือ legacy `service_role` key | **server เท่านั้น** (API route `/api/admin`) |
-| `DEFAULT_PASSWORD` | `123456` | รหัสผ่านเริ่มต้นตอน admin สร้าง/รีเซ็ตผู้ใช้ |
+| `DEFAULT_PASSWORD` | ตั้งเอง (อย่างน้อย 6 ตัว ห้าม commit) | รหัสผ่านเริ่มต้นตอน admin สร้าง/รีเซ็ตผู้ใช้ |
 
 > ⚠️ `SUPABASE_SERVICE_ROLE_KEY` ข้าม RLS ได้ทั้งหมด ห้ามใส่ prefix `NEXT_PUBLIC_` และห้าม commit `.env.local`
 
