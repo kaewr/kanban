@@ -1,18 +1,18 @@
 import "server-only";
 
-export const MIN_PASSWORD_LENGTH = 6; // Supabase Auth minimum (BR-23)
+export const MIN_PASSWORD_LENGTH = 8; // BR-59 (Supabase Auth itself allows 6; the default password may stay shorter)
 
 /** Returns a Thai error message, or null when the new password is acceptable. */
 export function validateNewPassword(newPassword: string, confirmPassword: string): string | null {
+  const defaultPassword = process.env.DEFAULT_PASSWORD;
+  if (defaultPassword && newPassword === defaultPassword) {
+    return "ห้ามใช้รหัสผ่านเริ่มต้น กรุณาตั้งรหัสผ่านใหม่"; // BR-24
+  }
   if (newPassword.length < MIN_PASSWORD_LENGTH) {
     return `รหัสผ่านต้องมีอย่างน้อย ${MIN_PASSWORD_LENGTH} ตัวอักษร`;
   }
   if (newPassword !== confirmPassword) {
     return "รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน";
-  }
-  const defaultPassword = process.env.DEFAULT_PASSWORD;
-  if (defaultPassword && newPassword === defaultPassword) {
-    return "ห้ามใช้รหัสผ่านเริ่มต้น กรุณาตั้งรหัสผ่านใหม่"; // BR-24
   }
   return null;
 }

@@ -7,7 +7,7 @@ import { loginUsernameFor } from "@/lib/accounts";
 import { getCurrentProfile } from "@/lib/auth";
 import { getSupabasePublicEnv } from "@/lib/env";
 import { passwordUpdateErrorMessage, validateNewPassword } from "@/lib/password";
-import { ROUTES, safeNextPath } from "@/lib/routes";
+import { ADMIN_MUST_CHANGE_PASSWORD, ROUTES, safeNextPath } from "@/lib/routes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { toAuthEmail } from "@/lib/username";
@@ -59,7 +59,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   // RLS hides the profile of an inactive account (BR-26).
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id")
+    .select("id, role, must_change_password")
     .eq("id", data.user.id)
     .maybeSingle();
 
@@ -68,7 +68,11 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     return { error: ACCOUNT_INACTIVE, userId };
   }
 
-  // Default-password accounts are not blocked; the app shows a warning banner (FR-02).
+  // BR-59: an admin on the default password goes straight to the profile page.
+  if (profile.role === "admin" && profile.must_change_password) {
+    redirect(`${ROUTES.profile}?reason=${ADMIN_MUST_CHANGE_PASSWORD}`);
+  }
+  // Other default-password accounts are not blocked; the app shows a warning banner (FR-02).
   redirect(next);
 }
 

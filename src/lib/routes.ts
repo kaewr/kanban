@@ -18,6 +18,8 @@ export const ROUTES = {
 } as const;
 
 export const LOGIN_REASON_INACTIVE = "inactive";
+/** BR-59: /profile?reason=… when an admin must change the default password first. */
+export const ADMIN_MUST_CHANGE_PASSWORD = "admin-must-change-password";
 
 /** Board URL (FR-11, FR-12). `user` is left out for the viewer's own board. */
 export function boardHref({ user, year }: { user?: string; year?: number }): string {

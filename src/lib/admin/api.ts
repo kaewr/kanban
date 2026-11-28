@@ -22,6 +22,9 @@ export async function requireAdminApi(): Promise<
   if (profile.role !== "admin") {
     return { response: apiError(403, "ไม่มีสิทธิ์ดำเนินการ") };
   }
+  if (profile.mustChangePassword) {
+    return { response: apiError(403, "กรุณาเปลี่ยนรหัสผ่านเริ่มต้นก่อนใช้งานส่วนผู้ดูแลระบบ") }; // BR-59
+  }
   return { admin: profile };
 }
 

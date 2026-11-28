@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicEnv } from "@/lib/env";
-import { LOGIN_REASON_INACTIVE, ROUTES } from "@/lib/routes";
+import { ADMIN_MUST_CHANGE_PASSWORD, LOGIN_REASON_INACTIVE, ROUTES } from "@/lib/routes";
 import type { Database } from "@/types/database";
 
 /**
@@ -70,7 +70,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // RLS returns no row when the account is inactive.
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id")
+    .select("id, role, must_change_password")
     .eq("id", userId)
     .maybeSingle();
 
@@ -86,6 +86,11 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   if (isLogin) {
     return redirectTo(ROUTES.home);
+  }
+
+  // BR-59: an admin on the default password may only use /profile until they change it.
+  if (profile.role === "admin" && profile.must_change_password && pathname !== ROUTES.profile) {
+    return redirectTo(ROUTES.profile, { reason: ADMIN_MUST_CHANGE_PASSWORD });
   }
 
   return response;

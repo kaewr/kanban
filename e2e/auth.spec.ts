@@ -88,7 +88,10 @@ test.describe("FR-02 default-password warning", () => {
     const confirm = page.getByLabel("ยืนยันรหัสผ่านใหม่");
     const submit = page.getByRole("button", { name: "เปลี่ยนรหัสผ่าน" });
 
-    // BR-24: the default password cannot be chosen again.
+    // BR-24: the default password cannot be chosen again. It may be shorter than the
+    // 8-character minimum (BR-59), so lift the browser check to reach the server rule.
+    await newPassword.evaluate((el) => el.removeAttribute("minlength"));
+    await confirm.evaluate((el) => el.removeAttribute("minlength"));
     await current.fill(defaultPassword());
     await newPassword.fill(defaultPassword());
     await confirm.fill(defaultPassword());

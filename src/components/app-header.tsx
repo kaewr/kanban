@@ -31,7 +31,7 @@ function initials(name: string): string {
 }
 
 export async function AppHeader() {
-  const profile = await requireProfile();
+  const profile = await requireProfile({ allowMustChange: true }); // header renders on /profile too
 
   const items: NavItem[] = [
     { href: ROUTES.board, label: "บอร์ด", icon: "board" },

@@ -376,6 +376,22 @@ async function main(): Promise<void> {
     if (restore.error) throw new Error(`restore order: ${restore.error.message}`);
   }
 
+  // ------------------------------------------------------------------ BR-59
+  console.log("\nAdmin on the default password (BR-59)");
+  {
+    must(await service.from("profiles").update({ must_change_password: true }).eq("id", admin.id).select("id"), "flag admin");
+    const c = admin.client;
+    const others = await c.from("tasks").select("id").in("id", [taskA, taskB]);
+    check("admin on default password cannot read others' tasks", (others.data ?? []).length === 0, others.error?.message);
+    const profiles = await c.from("profiles").select("id");
+    check("admin on default password reads only own profile", (profiles.data ?? []).length === 1);
+    const cat = await c.from("categories").update({ sort_order: 1 }).eq("id", category.id).select("id");
+    check("admin on default password cannot edit categories", cat.error !== null || (cat.data ?? []).length === 0);
+    must(await service.from("profiles").update({ must_change_password: false }).eq("id", admin.id).select("id"), "unflag admin");
+    const back = await c.from("tasks").select("id").in("id", [taskA, taskB]);
+    check("admin rights return after the password change", (back.data ?? []).length === 2, back.error?.message);
+  }
+
   // ------------------------------------------------------------------ BR-53..56 reviews
   console.log("\nReview tags (A asks B to review)");
   {
@@ -431,6 +447,22 @@ async function main(): Promise<void> {
     check("reviewer B cannot edit the task directly", (bUpd.data ?? []).length === 0);
     const bReq = await b.client.from("task_reviews").insert({ task_id: taskA, owner_id: a.id, reviewer_id: b.id, requested_by: b.id });
     check("B cannot create review requests for A's task", bReq.error !== null);
+
+    // v1.4.0: the owner can no longer write a decision or a comment in the reviewer's name.
+    const forgeDecision = await a.client.from("task_reviews")
+      .update({ status: "approved", decided_by: b.id, decided_at: new Date().toISOString() })
+      .eq("id", reviewId).select("id");
+    check("owner cannot mark their own request approved", forgeDecision.error !== null || (forgeDecision.data ?? []).length === 0);
+    const forgeComment = await a.client.from("task_reviews").update({ comment: "ผ่าน (ปลอม)" }).eq("id", reviewId).select("id");
+    check("owner cannot write the reviewer's comment", forgeComment.error !== null || (forgeComment.data ?? []).length === 0);
+    const forgeInsert = await a.client.from("task_reviews").insert({
+      task_id: taskA, owner_id: a.id, reviewer_id: b.id, requested_by: a.id, status: "open", comment: "ปลอม",
+    });
+    check("a new request cannot carry a comment", forgeInsert.error !== null);
+    const stillOpen = must(await service.from("task_reviews").select("status, comment").eq("id", reviewId).single(), "read review") as {
+      status: string; comment: string | null;
+    };
+    check("the request is untouched", stillOpen.status === "open" && stillOpen.comment === null);
 
     const ownerDecide = await a.client.rpc("review_decide", { p_review_id: reviewId, p_action: "approve" });
     check("the owner cannot approve their own request", ownerDecide.error !== null);

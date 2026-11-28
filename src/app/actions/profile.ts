@@ -13,7 +13,7 @@ export type ProfileFormState = { error?: string; success?: string };
  * unit, position and role stay admin-only (BR-30).
  */
 export async function updateOwnProfile(_prev: ProfileFormState, formData: FormData): Promise<ProfileFormState> {
-  const profile = await requireProfile();
+  const profile = await requireProfile({ allowMustChange: true });
 
   const name = parseDisplayName(formData.get("displayName"));
   if (!name.ok) return { error: name.error };

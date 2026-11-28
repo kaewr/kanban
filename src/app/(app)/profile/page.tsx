@@ -3,7 +3,7 @@ import { LogoutButton } from "@/components/logout-button";
 import { PasswordForm } from "@/components/password-form";
 import { ProfileForm } from "@/components/profile-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireProfile } from "@/lib/auth";
+import { mustChangeBeforeUse, requireProfile } from "@/lib/auth";
 
 export const metadata = { title: "โปรไฟล์ | Kanban Board บันทึกงาน" };
 // Every page reads the session per request, so it cannot be an instant navigation.
@@ -12,7 +12,7 @@ export const instant = false;
 const ROLE_LABEL = { admin: "ผู้ดูแลระบบ", user: "ผู้ใช้งาน" } as const;
 
 export default async function ProfilePage() {
-  const profile = await requireProfile();
+  const profile = await requireProfile({ allowMustChange: true });
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6">
@@ -20,6 +20,17 @@ export default async function ProfilePage() {
         <UserRoundIcon className="size-6 text-primary" aria-hidden />
         โปรไฟล์
       </h1>
+
+      {/* BR-59 */}
+      {mustChangeBeforeUse(profile) && (
+        <p
+          role="alert"
+          data-testid="admin-must-change"
+          className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
+        >
+          บัญชีผู้ดูแลระบบยังใช้รหัสผ่านเริ่มต้น กรุณาตั้งรหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร) ด้านล่างก่อนใช้งานหน้าอื่น
+        </p>
+      )}
 
       <Card>
         <CardHeader>

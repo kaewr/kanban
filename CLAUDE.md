@@ -99,13 +99,14 @@ docs/requirements.md     # สเปก
 - ตรวจงาน (FR-27, BR-53..56): `tasks.reviewer_id` มีค่าเฉพาะใน `review` (store ล้างเมื่อย้ายออก, `save_board_changes` บังคับซ้ำและสร้าง/ยกเลิก `task_reviews`) / ผู้ตรวจตัดสินที่ `/reviews` ผ่าน `review_decide()` / รายชื่อผู้ตรวจโหลดด้วย service role ใน `src/lib/people.ts` (id + ชื่อ + สังกัด) ส่งผ่าน `ReviewInfoProvider` / แจ้งเตือนสร้างโดย trigger เท่านั้น กระดิ่ง `NotificationBell` ดึงผ่าน server action `loadNotifications()` / backup รวม `task_reviews` (ไม่รวม notifications) restore ตั้ง `app.restoring` กันแจ้งเตือน / ลบ test user ต้องลบ notifications → task_reviews ก่อน (`e2e/support/users.ts`)
 - เวลาที่ใช้ (FR-28, BR-57): `tasks.duration_minutes` มีค่าเฉพาะ `done` (store ล้างเมื่อเปลี่ยนคอลัมน์, `save_board_changes` บังคับซ้ำ และบังคับกรอกเมื่อ create ลง done) / `formatDuration()` ใน `src/lib/board/rules.ts` / สถิติเวลาในอนาคตใช้ค่านี้ก่อน `completed_at − started_at`
 - การ์ดและเวลา (FR-29, BR-58): บรรทัดรายละเอียด `truncate` / เวลาแสดงด้วย `formatThaiDateTime()`, ช่องในหน้าต่างเป็น `datetime-local` ผ่าน `toDateTimeInput()` / `dateTimeInputToTimestamp()` (เวลาไทย) / ประวัติการย้ายโหลดใน `loadBoard()` (join tasks ด้วย `!inner`) เก็บใน store `history` และต่อท้ายด้วย moves ที่บันทึกแล้วใน `applySaved` / `arrivedAt()`, `movesOf()` ใน `src/lib/board/history.ts`
+- Security headers (v1.4.0) ตั้งใน `next.config.ts` `headers()` / `task_reviews`: เจ้าของ/admin insert ได้เฉพาะคำขอเปล่า และ update ได้เฉพาะคอลัมน์ status/decided_by/decided_at เป็น `withdrawn` (column grant) — ผลตรวจผ่าน `review_decide()` เท่านั้น
 - การ์ดกะทัดรัด (FR-25, BR-50): `useCardDensity()` เก็บใน localStorage `kanban:card-density` (ค่าเริ่มต้นตอน SSR = ปกติ) ส่ง `compact` ไปที่ `TaskCardContent`
 - ร่างใน localStorage key `kanban:draft:<ownerId>:<year>` ลบเมื่อบันทึกสำเร็จ / ทิ้ง / ออกจากระบบ (`BoardDraft` โหลดแบบ client-only)
 
 ### Auth
 - Login = เลือกชื่อจาก dropdown (BR-20) — รายชื่อโหลดด้วย service role ใน `src/lib/accounts.ts` (เฉพาะ id + ชื่อ + สังกัด ของบัญชีที่ใช้งานอยู่) / username สร้างอัตโนมัติ `generateUsername()` → `<username>@kanban.local` (BR-21) ไม่แสดงใน UI / ชื่อ-นามสกุลของบัญชีที่ใช้งานอยู่ห้ามซ้ำ (`isNameTaken`)
 - สังกัดงาน `units` ตายตัว 4 งาน (BR-29) / ตำแหน่ง admin แก้เท่านั้น (BR-30) / ผู้ใช้แก้ชื่อ + `year_type` ของตัวเองผ่าน `updateOwnProfile` (BR-31) / บอร์ดใช้ `year_type` ของเจ้าของบอร์ด
-- `must_change_password = true` → **ไม่บล็อก** แสดงแถบเตือน `DefaultPasswordBanner` ทุกหน้าจนกว่าจะเปลี่ยนรหัสที่ `/profile` (FR-02 แก้ไข 20 พ.ย. 2026)
+- `must_change_password = true` → ผู้ใช้ทั่วไป**ไม่บล็อก** แสดงแถบเตือน `DefaultPasswordBanner` ทุกหน้าจนกว่าจะเปลี่ยนรหัสที่ `/profile` (FR-02 แก้ไข 20 พ.ย. 2026) / **admin ถูกบล็อก (BR-59, v1.4.0)**: login + proxy + `requireProfile()` ส่งไป `/profile?reason=admin-must-change-password` (หน้าโปรไฟล์/header/`updateOwnProfile` เรียก `requireProfile({ allowMustChange: true })`), `requireAdminApi` ตอบ 403 และ `is_admin()` ใน DB คืน false / รหัสใหม่ ≥ 8 (`MIN_PASSWORD_LENGTH`)
 - proxy (`src/proxy.ts`) ตรวจแค่ login แล้วหรือยัง และบัญชีถูกปิดหรือไม่
 - หน้าและ Server Action ต้องเรียก `requireProfile()` / `requireAdmin()` จาก `src/lib/auth.ts` เสมอ ไม่พึ่ง proxy อย่างเดียว
 
@@ -140,5 +141,6 @@ docs/requirements.md     # สเปก
 - [x] วันลา (FR-22)
 - [x] สำรอง/กู้คืนข้อมูล (FR-23)
 - [x] แถบวันนี้ลา/วันหยุด + ปฏิทินวันลา + วันหยุดราชการ (FR-24) + การ์ดกะทัดรัด (FR-25) + หัวข้องานสำเร็จรูป / กำหนดเสร็จเริ่มต้นวันนี้ (FR-26)
+- [x] ปรับความปลอดภัย (v1.4.0, FR-30)
 - [x] เลขเวอร์ชันบนทุกหน้า + หน้า "มีอะไรใหม่" (v1.3.0)
 - [x] Tag ผู้ตรวจ + หน้าตรวจงาน + แจ้งเตือนในระบบ (FR-27) + เวลาที่ใช้เป็นนาที (FR-28) + รายละเอียด/วันเวลาบนการ์ด (FR-29)

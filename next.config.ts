@@ -32,6 +32,22 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // v1.4.0 security headers (HSTS comes from Vercel). frame-ancestors / X-Frame-Options
+  // stop other sites from embedding the app (clickjacking).
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/", destination: "/board", permanent: false },

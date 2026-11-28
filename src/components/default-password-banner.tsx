@@ -1,6 +1,6 @@
 import { KeyRoundIcon } from "lucide-react";
 import Link from "next/link";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, mustChangeBeforeUse } from "@/lib/auth";
 import { ROUTES } from "@/lib/routes";
 
 /**
@@ -21,7 +21,9 @@ export async function DefaultPasswordBanner() {
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-sm">
         <KeyRoundIcon className="size-4 shrink-0" aria-hidden />
         <p className="flex-1">
-          คุณยังใช้รหัสผ่านเริ่มต้น เพื่อความปลอดภัยควรเปลี่ยนรหัสผ่าน
+          {mustChangeBeforeUse(profile)
+            ? "ผู้ดูแลระบบต้องเปลี่ยนรหัสผ่านเริ่มต้นก่อนใช้งาน (สิทธิ์ผู้ดูแลระบบจะกลับมาหลังเปลี่ยนรหัส)"
+            : "คุณยังใช้รหัสผ่านเริ่มต้น เพื่อความปลอดภัยควรเปลี่ยนรหัสผ่าน"}
         </p>
         <Link
           href={ROUTES.profile}

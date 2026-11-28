@@ -136,8 +136,10 @@ test.describe("FR-04 create user", () => {
     expect(res.status()).toBe(201);
 
     const other = await newSession(browser);
-    await loginAs(other, { displayName: name, password: defaultPassword() });
+    // BR-59: a new admin starts on the default password, so they land on /profile first.
+    await loginAs(other, { displayName: name, password: defaultPassword() }, /\/profile\?reason=admin-must-change-password$/);
     await expect(other.getByRole("navigation").getByRole("link", { name: "Admin" })).toBeVisible();
+    await expect(other.getByTestId("admin-must-change")).toBeVisible();
   });
 });
 

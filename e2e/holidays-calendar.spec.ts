@@ -6,6 +6,12 @@ import { seedTasks } from "./support/tasks";
 import { service } from "./support/users";
 
 const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
+/** Today, or the next Monday when today is a weekend (the calendar hides leave on weekends). */
+const nextWeekday = () => {
+  const d = new Date(`${today()}T00:00:00Z`);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
 
 async function addLeave(ownerId: string, leaveType: string, startDate: string, endDate = startDate) {
   const { error } = await service()
@@ -114,7 +120,7 @@ test.describe("leave calendar (BR-48)", () => {
     const user = await makeUser();
     const other = await makeUser();
     const admin = await makeUser({ role: "admin" });
-    const date = today();
+    const date = nextWeekday();
     await addLeave(user.id, "vacation", date);
     await addLeave(other.id, "personal", date);
 
@@ -123,6 +129,8 @@ test.describe("leave calendar (BR-48)", () => {
     await gotoReady(userPage, "/leave");
     await userPage.getByRole("link", { name: "ปฏิทินวันลา" }).click();
     await expect(userPage).toHaveURL(/\/leave\/calendar$/);
+    const month = date.slice(0, 7); // may be next month when today is a weekend at month end
+    if (month !== today().slice(0, 7)) await gotoReady(userPage, `/leave/calendar?month=${month}`);
     const userCell = userPage.getByTestId("calendar-grid").locator(`[data-date="${date}"]`);
     await expect(userCell.getByTestId("calendar-leave")).toHaveText(["ลาพักผ่อน"]);
     await expect(userPage.getByText(other.displayName)).toHaveCount(0);
@@ -130,7 +138,7 @@ test.describe("leave calendar (BR-48)", () => {
 
     const adminPage = await browser.newPage();
     await loginAs(adminPage, admin);
-    await gotoReady(adminPage, "/leave/calendar");
+    await gotoReady(adminPage, `/leave/calendar?month=${month}`);
     const adminCell = adminPage.getByTestId("calendar-grid").locator(`[data-date="${date}"]`);
     await expect(adminCell).toContainText(`${user.displayName} · ลาพักผ่อน`);
     await expect(adminCell).toContainText(`${other.displayName} · ลากิจ`);
@@ -140,7 +148,7 @@ test.describe("leave calendar (BR-48)", () => {
     await adminPage.getByRole("link", { name: "เดือนถัดไป" }).click();
     await expect(adminPage).toHaveURL(/month=/);
     await expect(adminPage.getByTestId("calendar-month")).not.toHaveText(thisMonth ?? "");
-    await adminPage.getByRole("link", { name: "เดือนนี้" }).click();
+    await adminPage.getByRole("link", { name: "เดือนก่อนหน้า" }).click();
     await expect(adminPage.getByTestId("calendar-month")).toHaveText(thisMonth ?? "");
     await expect(adminPage.getByTestId("calendar-grid").locator(`[data-date="${date}"]`)).toContainText(user.displayName);
     await adminPage.close();

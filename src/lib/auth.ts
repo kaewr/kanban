@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ROUTES } from "@/lib/routes";
+import { ADMIN_MUST_CHANGE_PASSWORD, ROUTES } from "@/lib/routes";
 import type { UserRole, YearType } from "@/types/domain";
 
 export type CurrentProfile = {
@@ -48,15 +48,29 @@ export const getCurrentProfile = cache(async (): Promise<CurrentProfile | null> 
   };
 });
 
-/** For app pages and actions: signed in and active. */
-export async function requireProfile(): Promise<CurrentProfile> {
+/**
+ * For app pages and actions: signed in and active. An admin still on the default
+ * password is sent to /profile first (BR-59) unless the caller is the profile page
+ * or its own actions (`allowMustChange`).
+ */
+export async function requireProfile(opts: { allowMustChange?: boolean } = {}): Promise<CurrentProfile> {
   const profile = await getCurrentProfile();
   if (!profile) redirect(ROUTES.login);
+  if (!opts.allowMustChange && mustChangeBeforeUse(profile)) {
+    redirect(`${ROUTES.profile}?reason=${ADMIN_MUST_CHANGE_PASSWORD}`);
+  }
   return profile;
 }
 
 export async function requireAdmin(): Promise<CurrentProfile> {
   const profile = await requireProfile();
   if (profile.role !== "admin") redirect(ROUTES.home);
+  // BR-59: no admin work on the default password (the DB's is_admin() agrees).
+  if (profile.mustChangePassword) redirect(`${ROUTES.profile}?reason=${ADMIN_MUST_CHANGE_PASSWORD}`);
   return profile;
+}
+
+/** BR-59: an admin still on the default password must change it before anything else. */
+export function mustChangeBeforeUse(profile: Pick<CurrentProfile, "role" | "mustChangePassword">): boolean {
+  return profile.role === "admin" && profile.mustChangePassword;
 }
